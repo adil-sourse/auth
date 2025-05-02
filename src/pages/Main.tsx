@@ -15,24 +15,28 @@ export default function Main() {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/products")
-      .then((res) => res.json())
-      .then((data: Product[]) => setProducts(data))
-      .catch((err) => console.error("Ошибка загрузки", err));
+    const loadData = async () => {
+      fetch("http://localhost:5000/products")
+        .then((res) => res.json())
+        .then((data: Product[]) => setProducts(data))
+        .catch((err) => console.error("Ошибка загрузки", err));
+    };
+    loadData();
   }, []);
 
   const seedProducts = async () => {
     await axios.post("http://localhost:5000/seed-products");
   };
 
-  useEffect(() => {
-    seedProducts();
-  });
-
   return (
     <div className="">
       <Header />
-
+      <button
+        onClick={seedProducts}
+        className="ml-20 bg-red-500 p-1 rounded-lg text-white"
+      >
+        seed Products
+      </button>
       <div className="max-w-7xl mx-auto px-4">
         <h1 className="font-bold text-3xl text-center mt-3 mb-10">Products </h1>
 

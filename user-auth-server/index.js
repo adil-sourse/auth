@@ -28,6 +28,7 @@ import productsData from "./data/products.js";
 app.post("/seed-products", async (req, res) => {
   try {
     await Product.deleteMany();
+    await Product.deleteMany();
     await Product.insertMany(productsData);
     res.status(200).json({ message: "Продукты успешно добавлены" });
   } catch (err) {
