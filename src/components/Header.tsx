@@ -1,31 +1,28 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "../assets/logo.png";
 import Button from "./ui/button";
-import { IoIosSearch } from "react-icons/io";
+import useAuth from "../hooks/useAuth";
+import Logo from "../assets/logo.png";
 
 export default function Header() {
   const navigate = useNavigate();
-  const [isAuth, setIsAuth] = useState(false);
-
-  useEffect(() => {
-    const auth = localStorage.getItem("auth");
-    setIsAuth(auth === "true");
-  }, []);
+  const { user, logout } = useAuth();
 
   const handleAccountClick = () => {
-    navigate(isAuth ? "/account" : "/login");
+    if (user) {
+      navigate("/account");
+    } else {
+      navigate("/login");
+    }
   };
 
   return (
-    <div className="flex justify-between px-20 py-7 items-center ">
+    <div className="flex justify-between px-20 py-7 items-center">
       <div className="flex gap-16">
-        <div className="">
+        <div>
           <span onClick={() => navigate("/")} className="cursor-pointer">
-            <img src={Logo} alt="" className="w-10" />
+            <img src={Logo} alt="Logo" className="w-10" />
           </span>
         </div>
-
         <div className="flex gap-10">
           <span
             onClick={() => navigate("/")}
@@ -54,27 +51,21 @@ export default function Header() {
         </div>
       </div>
       <div className="flex gap-5">
-        <div className="relative">
-          <IoIosSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
-          <input
-            type="text"
-            placeholder="Search"
-            className="bg-white border py-2 pl-10 pr-3 text-sm rounded-md focus:outline-gray-400"
-          />
-        </div>
-
         <span
           onClick={handleAccountClick}
           className="cursor-pointer flex items-center gap-1 hover:text-slate-300"
         >
-          {isAuth ? (
-            <div className="flex">
-              <Button>Account</Button>
-            </div>
-          ) : (
-            <Button>Login</Button>
-          )}
+          {user ? <Button>Account</Button> : <Button>Login</Button>}
         </span>
+
+        {user && user.role === "admin" && (
+          <span
+            onClick={() => navigate("/admin")}
+            className="cursor-pointer flex items-center gap-1 hover:text-slate-300"
+          >
+            <Button>Admin</Button>
+          </span>
+        )}
       </div>
     </div>
   );

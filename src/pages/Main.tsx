@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Button from "../components/ui/button";
-import axios from "axios";
 
 interface Product {
   id: number;
@@ -24,19 +23,10 @@ export default function Main() {
     loadData();
   }, []);
 
-  const seedProducts = async () => {
-    await axios.post("http://localhost:5000/seed-products");
-  };
-
   return (
     <div className="">
       <Header />
-      <button
-        onClick={seedProducts}
-        className="ml-20 bg-red-500 p-1 rounded-lg text-white"
-      >
-        seed Products
-      </button>
+
       <div className="max-w-7xl mx-auto px-4">
         <h1 className="font-bold text-3xl text-center mt-3 mb-10">Products </h1>
 
@@ -44,9 +34,9 @@ export default function Main() {
           {products.map((product) => (
             <div
               key={product.id}
-              className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-xs h-96 justify-center grid"
+              className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-xs h-96 mx-auto"
             >
-              <div className="w-64 h-64 rounded-2xl relative overflow-hidden ">
+              <div className="w-64 h-64 rounded-2xl relative overflow-hidden mx-auto">
                 <img
                   src={product.image}
                   alt="Preview"
@@ -54,7 +44,7 @@ export default function Main() {
                 />
               </div>
 
-              <div className="p-5 ">
+              <div className="p-5">
                 <h2 className="text-xl font-semibold text-gray-800 mb-2 line-clamp-1">
                   {product.name}
                 </h2>
@@ -64,12 +54,12 @@ export default function Main() {
                       {product.description}
                     </p>
                     <p className="text-lg font-bold text-gray-800 line-clamp-1">
-                      {product.price}
+                      {product.price} ₸
                     </p>
                   </div>
                   <Button
                     type="button"
-                    className="ml-6 px-4 py-2 text-white bg-black text-lg font-medium rounded-lg transition duration-300 w-1/2"
+                    className="ml-6 px-4 py-2 text-white bg-black text-lg font-medium rounded-lg transition duration-300 w-32"
                   >
                     Go
                   </Button>

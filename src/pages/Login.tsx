@@ -14,12 +14,12 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      await axios.post("http://localhost:5000/login", {
-        login,
-        password,
-      });
+      await axios.post(
+        "http://localhost:5000/login",
+        { login, password },
+        { withCredentials: true }
+      );
 
-      localStorage.setItem("auth", "true");
       navigate("/");
     } catch (err: any) {
       setError(err.response?.data?.message || "Ошибка входа");

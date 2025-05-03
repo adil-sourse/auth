@@ -14,12 +14,17 @@ export default function Register() {
     e.preventDefault();
 
     try {
-      await axios.post("http://localhost:5000/register", {
-        login,
-        password,
-      });
+      await axios.post(
+        "http://localhost:5000/register",
+        {
+          login,
+          password,
+          role: "user",
+        },
+        { withCredentials: true }
+      );
 
-      navigate("/login");
+      navigate("/");
     } catch (err: any) {
       setError(err.response?.data?.message || "Ошибка при регистрации");
     }
@@ -35,16 +40,16 @@ export default function Register() {
           Регистрация
         </h1>
         <Input
-          type={"text"}
+          type="text"
           value={login}
-          placeholder={"Логин"}
+          placeholder="Логин"
           onChange={(e) => setLogin(e.target.value)}
           required
         />
         <Input
-          type={"password"}
+          type="password"
           value={password}
-          placeholder={"Пароль"}
+          placeholder="Пароль"
           onChange={(e) => setPassword(e.target.value)}
           required
         />

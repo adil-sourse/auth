@@ -1,12 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import axios from "axios";
 
 export default function Account() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("auth");
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/logout",
+        {},
+        { withCredentials: true }
+      );
+      console.log("Response:", response.data);
+      navigate("/");
+    } catch (err: any) {
+      console.error("Ошибка при выходе из аккаунта:", err);
+    }
   };
 
   return (
