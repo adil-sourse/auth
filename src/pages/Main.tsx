@@ -30,6 +30,18 @@ export default function Main() {
       <div className="max-w-7xl mx-auto px-4">
         <h1 className="font-bold text-3xl text-center mt-3 mb-10">Products </h1>
 
+        <div className="flex gap-8 mx-10 md:mx-0">
+          <input
+            type="text"
+            placeholder="Search"
+            className="border p-2 rounded-lg mb-8 focus:outline-none w-full "
+          />
+
+          <button className="bg-black p-2 text-white h-10 rounded-lg">
+            Filters
+          </button>
+        </div>
+
         <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 place-items-center">
           {products.map((product) => (
             <div
@@ -59,7 +71,7 @@ export default function Main() {
                   </div>
                   <Button
                     type="button"
-                    className="ml-6 px-4 py-2 text-white bg-black text-lg font-medium rounded-lg transition duration-300 w-32"
+                    className="ml-6 px-4 py-2 text-white bg-black text-lg font-medium rounded-lg transition duration-300 w-24"
                   >
                     Go
                   </Button>

@@ -98,7 +98,7 @@ export default function Admin() {
               key={product._id}
               className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-xs h-96 mx-auto"
             >
-              <div className="w-64 h-64 rounded-2xl relative overflow-hidden mx-auto">
+              <div className="w-64 h-64 mt-3 md:mt-0 rounded-2xl relative overflow-hidden mx-auto">
                 <img
                   src={product.image}
                   alt="Preview"
@@ -122,7 +122,7 @@ export default function Admin() {
                   <Button
                     onClick={() => handleDelete(product._id)}
                     type="button"
-                    className="ml-6 px-4 py-2 text-white bg-red-600 text-lg font-medium rounded-lg transition duration-300 w-32"
+                    className="ml-6 px-4 py-2 text-white bg-red-600 text-lg font-medium rounded-lg transition duration-300 w-24 "
                   >
                     Удалить
                   </Button>
