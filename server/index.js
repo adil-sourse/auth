@@ -1,4 +1,3 @@
-
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -8,16 +7,14 @@ import User from "./models/user.js";
 import Product from "./models/product.js";
 import productsData from "./data/products.js";
 import dotenv from "dotenv";
-import bcrypt from "bcrypt"; 
+import bcrypt from "bcrypt";
 
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-
 const app = express();
 const PORT = 5000;
-
 
 mongoose.connect("mongodb://localhost:27017/users", {
   useNewUrlParser: true,
@@ -28,16 +25,15 @@ const db = mongoose.connection;
 db.on("error", console.error.bind(console, "MongoDB ошибка:"));
 db.once("open", () => console.log("Подключено к MongoDB"));
 
-
-app.use(cors({
-  origin: 'http://localhost:5173',  
-  credentials: true,  
-}));
-
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 app.use(cookieParser());
 app.use(express.json());
-
 
 function authenticate(req, res, next) {
   const token = req.cookies.token;
@@ -51,7 +47,6 @@ function authenticate(req, res, next) {
     return res.status(403).json({ message: "Недействительный токен" });
   }
 }
-
 
 app.get("/me", authenticate, (req, res) => {
   res.json({ user: req.user });
@@ -74,7 +69,6 @@ app.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Пользователь уже существует" });
     }
 
-  
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
@@ -87,7 +81,7 @@ app.post("/register", async (req, res) => {
 
     res.status(201).json({ message: "Успешная регистрация" });
   } catch (err) {
-    console.error("Ошибка регистрации:", err); 
+    console.error("Ошибка регистрации:", err);
     res.status(500).json({ message: "Ошибка сервера при регистрации" });
   }
 });
@@ -97,47 +91,41 @@ app.post("/login", async (req, res) => {
   try {
     const user = await User.findOne({ login });
     if (!user) {
-      console.error("Пользователь не найден"); 
+      console.error("Пользователь не найден");
       return res.status(401).json({ message: "Неверные данные" });
     }
 
- 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      console.error("Неверный пароль"); 
+      console.error("Неверный пароль");
       return res.status(401).json({ message: "Неверные данные" });
     }
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
+      expiresIn: "1d",
+    });
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false, 
+      secure: false,
       sameSite: "Strict",
     });
 
     res.status(200).json({ message: "Вход выполнен" });
   } catch (err) {
-    console.error("Ошибка входа:", err); 
+    console.error("Ошибка входа:", err);
     res.status(500).json({ message: "Ошибка сервера при входе" });
   }
 });
 
-
 app.post("/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: false, 
-    sameSite: "Strict"
+    secure: false,
+    sameSite: "Strict",
   });
   res.json({ message: "Вы вышли" });
 });
-
-
 
 app.post("/products", async (req, res) => {
   try {
@@ -170,15 +158,27 @@ app.post("/add-product", async (req, res) => {
   }
 });
 
-app.delete("/products/:id", async (req, res) => {
+app.put("/products/:id", async (req, res) => {
+  const { id } = req.params;
+  const updatedData = req.body;
+
   try {
-    await Product.findByIdAndDelete(req.params.id);
-    res.status(204).end();
+    const updatedProduct = await Product.findByIdAndUpdate(id, updatedData, {
+      new: true,
+    });
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Продукт не найден" });
+    }
+
+    const all = await Product.find();
+    res.json(all); // отправляем обновлённый список продуктов
   } catch (err) {
-    res.status(500).json({ message: "Ошибка при удалении" });
+    console.error("Ошибка при обновлении:", err);
+    res.status(500).json({ message: "Ошибка при обновлении продукта" });
   }
 });
 
 app.listen(PORT, () =>
-  console.log(`Сервер запущен на http://localhost:${PORT}`)
-)
+  console.log("Сервер запущен на http://localhost:${PORT}")
+);
