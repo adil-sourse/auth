@@ -5,7 +5,6 @@ import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
 import User from "./models/user.js";
 import Product from "./models/product.js";
-import productsData from "./data/products.js";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 
@@ -48,6 +47,15 @@ function authenticate(req, res, next) {
   }
 }
 
+function adminOnly(req, res, next) {
+  if (req.user.role !== "admin") {
+    return res
+      .status(403)
+      .json({ message: "Доступ только для администраторов" });
+  }
+  next();
+}
+
 app.get("/me", authenticate, (req, res) => {
   res.json({ user: req.user });
 });
@@ -75,6 +83,7 @@ app.post("/register", async (req, res) => {
       login,
       password: hashedPassword,
       role: role || "user",
+      basket: [],
     });
 
     await newUser.save();
@@ -85,6 +94,7 @@ app.post("/register", async (req, res) => {
     res.status(500).json({ message: "Ошибка сервера при регистрации" });
   }
 });
+
 app.post("/login", async (req, res) => {
   const { login, password } = req.body;
 
@@ -127,14 +137,28 @@ app.post("/logout", (req, res) => {
   res.json({ message: "Вы вышли" });
 });
 
-app.post("/products", async (req, res) => {
+app.post("/products", authenticate, adminOnly, async (req, res) => {
   try {
-    const newProduct = new Product(req.body);
+    const { name, price, description, category, image } = req.body;
+    if (!name || !price) {
+      return res.status(400).json({ message: "Название и цена обязательны" });
+    }
+
+    const newProduct = new Product({
+      name,
+      price: parseFloat(price),
+      description,
+      category,
+      image,
+      stock: 0,
+    });
+
     await newProduct.save();
     const all = await Product.find();
     res.status(201).json(all);
   } catch (err) {
-    res.status(500).json({ message: "Ошибка при добавлении" });
+    console.error("Ошибка при добавлении продукта:", err);
+    res.status(500).json({ message: err.message || "Ошибка при добавлении" });
   }
 });
 
@@ -143,29 +167,48 @@ app.get("/products", async (req, res) => {
     const products = await Product.find();
     res.status(200).json(products);
   } catch (err) {
+    console.error("Ошибка при получении продуктов:", err);
     res.status(500).json({ message: "Ошибка при получении продуктов" });
   }
 });
 
-app.post("/add-product", async (req, res) => {
-  const { name, description, price, image } = req.body;
-  const newProduct = new Product({ name, description, price, image });
+app.delete("/products/:id", authenticate, adminOnly, async (req, res) => {
+  const { id } = req.params;
   try {
-    await newProduct.save();
-    res.status(201).json({ message: "Продукт добавлен" });
+    const product = await Product.findByIdAndDelete(id);
+    if (!product) {
+      return res.status(404).json({ message: "Продукт не найден" });
+    }
+
+    await User.updateMany(
+      { "basket.productId": id },
+      { $pull: { basket: { productId: id } } }
+    );
+
+    const all = await Product.find();
+    res.json(all);
   } catch (err) {
-    res.status(500).json({ message: "Ошибка при добавлении" });
+    console.error("Ошибка при удалении продукта:", err);
+    res.status(500).json({ message: "Ошибка при удалении продукта" });
   }
 });
 
-app.put("/products/:id", async (req, res) => {
+app.put("/products/:id", authenticate, adminOnly, async (req, res) => {
   const { id } = req.params;
-  const updatedData = req.body;
+  const { name, price, description, category, image } = req.body;
 
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(id, updatedData, {
-      new: true,
-    });
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      {
+        name,
+        price: price ? parseFloat(price) : undefined,
+        description,
+        category,
+        image,
+      },
+      { new: true }
+    );
 
     if (!updatedProduct) {
       return res.status(404).json({ message: "Продукт не найден" });
@@ -174,12 +217,11 @@ app.put("/products/:id", async (req, res) => {
     const all = await Product.find();
     res.json(all);
   } catch (err) {
-    console.error("Ошибка при обновлении:", err);
+    console.error("Ошибка при обновлении продукта:", err);
     res.status(500).json({ message: "Ошибка при обновлении продукта" });
   }
 });
 
-// Получение данных текущего пользователя
 app.get("/user", authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -193,7 +235,6 @@ app.get("/user", authenticate, async (req, res) => {
   }
 });
 
-// Обновление данных пользователя
 app.put("/user", authenticate, async (req, res) => {
   const { login, password, name, email, phone } = req.body;
 
@@ -203,7 +244,6 @@ app.put("/user", authenticate, async (req, res) => {
       return res.status(404).json({ message: "Пользователь не найден" });
     }
 
-    // Обновляем логин
     if (login) {
       const exists = await User.findOne({ login });
       if (exists && exists._id.toString() !== user._id.toString()) {
@@ -212,7 +252,6 @@ app.put("/user", authenticate, async (req, res) => {
       user.login = login;
     }
 
-    // Обновляем пароль
     if (password) {
       if (password.length < 8) {
         return res.status(400).json({ message: "Пароль слишком короткий" });
@@ -220,7 +259,6 @@ app.put("/user", authenticate, async (req, res) => {
       user.password = await bcrypt.hash(password, 10);
     }
 
-    // Обновляем email
     if (email) {
       const emailExists = await User.findOne({ email });
       if (emailExists && emailExists._id.toString() !== user._id.toString()) {
@@ -233,7 +271,6 @@ app.put("/user", authenticate, async (req, res) => {
       user.email = "";
     }
 
-    // Обновляем остальные поля
     user.name = name !== undefined ? name : user.name;
     user.phone = phone !== undefined ? phone : user.phone;
 
@@ -245,6 +282,125 @@ app.put("/user", authenticate, async (req, res) => {
   }
 });
 
+app.get("/basket", authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .populate("basket.productId")
+      .select("basket");
+    if (!user) {
+      return res.status(404).json({ message: "Пользователь не найден" });
+    }
+    const validBasket = user.basket.filter((item) => item.productId);
+    res.json(validBasket);
+  } catch (err) {
+    console.error("Ошибка при получении корзины:", err);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
+app.post("/basket", authenticate, async (req, res) => {
+  const { productId, quantity } = req.body;
+
+  if (!productId || !quantity || quantity < 1) {
+    return res
+      .status(400)
+      .json({ message: "Требуется ID продукта и количество" });
+  }
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "Пользователь не найден" });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Продукт не найден" });
+    }
+
+    const basketItemIndex = user.basket.findIndex(
+      (item) => item.productId.toString() === productId
+    );
+
+    if (basketItemIndex >= 0) {
+      user.basket[basketItemIndex].quantity += quantity;
+    } else {
+      user.basket.push({ productId, quantity });
+    }
+
+    await user.save();
+    const updatedUser = await User.findById(req.user.id)
+      .populate("basket.productId")
+      .select("basket");
+    const validBasket = updatedUser.basket.filter((item) => item.productId);
+    res.json(validBasket);
+  } catch (err) {
+    console.error("Ошибка при добавлении в корзину:", err);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
+app.put("/basket/:productId", authenticate, async (req, res) => {
+  const { productId } = req.params;
+  const { quantity } = req.body;
+
+  if (!quantity || quantity < 1) {
+    return res.status(400).json({ message: "Требуется корректное количество" });
+  }
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "Пользователь не найден" });
+    }
+
+    const basketItemIndex = user.basket.findIndex(
+      (item) => item.productId.toString() === productId
+    );
+
+    if (basketItemIndex === -1) {
+      return res.status(404).json({ message: "Продукт не найден в корзине" });
+    }
+
+    user.basket[basketItemIndex].quantity = quantity;
+    await user.save();
+
+    const updatedUser = await User.findById(req.user.id)
+      .populate("basket.productId")
+      .select("basket");
+    const validBasket = updatedUser.basket.filter((item) => item.productId);
+    res.json(validBasket);
+  } catch (err) {
+    console.error("Ошибка при обновлении корзины:", err);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
+app.delete("/basket/:productId", authenticate, async (req, res) => {
+  const { productId } = req.params;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "Пользователь не найден" });
+    }
+
+    user.basket = user.basket.filter(
+      (item) => item.productId.toString() !== productId
+    );
+    await user.save();
+
+    const updatedUser = await User.findById(req.user.id)
+      .populate("basket.productId")
+      .select("basket");
+    const validBasket = updatedUser.basket.filter((item) => item.productId);
+    res.json(validBasket);
+  } catch (err) {
+    console.error("Ошибка при удалении из корзины:", err);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
 app.listen(PORT, () =>
-  console.log("Сервер запущен на http://localhost:${PORT}")
+  console.log(`Сервер запущен на http://localhost:${PORT}`)
 );

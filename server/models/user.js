@@ -7,6 +7,16 @@ const userSchema = new mongoose.Schema({
   name: { type: String, default: "" },
   email: { type: String, default: "", unique: true, sparse: true },
   phone: { type: String, default: "" },
+  basket: [
+    {
+      productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+        required: true,
+      },
+      quantity: { type: Number, required: true, min: 1 },
+    },
+  ],
 });
 
 export default mongoose.model("User", userSchema);

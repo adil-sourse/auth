@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Account from "./pages/Account";
 import Admin from "./pages/Admin";
+import Basket from "./pages/Basket";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -17,6 +18,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/basket" element={<Basket />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

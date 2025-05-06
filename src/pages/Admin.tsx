@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import ProductCardAdmin from "../components/CardAdmin";
 import EditProductModal from "../components/ModalAdmin";
+import { useNavigate } from "react-router-dom";
 
 interface Product {
   _id: string;
@@ -24,29 +25,62 @@ export default function Admin() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch("http://localhost:5000/products")
       .then((res) => res.json())
-      .then(setProducts);
+      .then(setProducts)
+      .catch((err) => {
+        console.error("Ошибка загрузки продуктов:", err);
+        setError("Ошибка загрузки продуктов");
+      });
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
+    setError("");
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedCategory(e.target.value);
     setNewProduct({ ...newProduct, category: e.target.value });
+    setError("");
   };
 
   const handleAdd = async () => {
-    const res = await fetch("http://localhost:5000/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newProduct),
-    });
-    if (res.ok) {
+    if (!newProduct.name || !newProduct.price) {
+      setError("Название и цена обязательны");
+      return;
+    }
+
+    const priceNum = parseFloat(newProduct.price);
+    if (isNaN(priceNum) || priceNum < 0) {
+      setError("Цена должна быть положительным числом");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          ...newProduct,
+          price: priceNum,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        if (res.status === 401 || res.status === 403) {
+          navigate("/login");
+          return;
+        }
+        throw new Error(errorData.message || "Ошибка при добавлении продукта");
+      }
+
       const updated = await res.json();
       setProducts(updated);
       setNewProduct({
@@ -57,17 +91,41 @@ export default function Admin() {
         category: "",
       });
       setSelectedCategory("");
+      setError("");
+    } catch (err: any) {
+      console.error("Ошибка при добавлении:", err);
+      setError(err.message || "Ошибка сервера");
     }
   };
 
   const handleDelete = async (id: string) => {
-    await fetch(`http://localhost:5000/products/${id}`, { method: "DELETE" });
-    setProducts(products.filter((p) => p._id !== id));
+    try {
+      const res = await fetch(`http://localhost:5000/products/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        if (res.status === 401 || res.status === 403) {
+          navigate("/login");
+          return;
+        }
+        throw new Error(errorData.message || "Ошибка при удалении продукта");
+      }
+
+      const updated = await res.json();
+      setProducts(updated);
+    } catch (err: any) {
+      console.error("Ошибка при удалении:", err);
+      setError(err.message || "Ошибка сервера");
+    }
   };
 
   const handleEditClick = (product: Product) => {
     setEditProduct(product);
     setIsModalOpen(true);
+    setError("");
   };
 
   const handleEditChange = (
@@ -79,20 +137,44 @@ export default function Admin() {
 
   const handleUpdate = async () => {
     if (!editProduct) return;
-    const res = await fetch(
-      `http://localhost:5000/products/${editProduct._id}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editProduct),
-      }
-    );
 
-    if (res.ok) {
+    const priceNum = parseFloat(editProduct.price);
+    if (isNaN(priceNum) || priceNum < 0) {
+      setError("Цена должна быть положительным числом");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `http://localhost:5000/products/${editProduct._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            ...editProduct,
+            price: priceNum,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        if (res.status === 401 || res.status === 403) {
+          navigate("/login");
+          return;
+        }
+        throw new Error(errorData.message || "Ошибка при обновлении продукта");
+      }
+
       const updated = await res.json();
       setProducts(updated);
       setIsModalOpen(false);
       setEditProduct(null);
+      setError("");
+    } catch (err: any) {
+      console.error("Ошибка при обновлении:", err);
+      setError(err.message || "Ошибка сервера");
     }
   };
 
@@ -100,7 +182,13 @@ export default function Admin() {
     <div>
       <Header />
       <div className="p-4 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-center">Admin products</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center">
+          Модерация товаров
+        </h1>
+
+        {error && (
+          <p className="text-red-600 text-sm text-center mb-4">{error}</p>
+        )}
 
         <div className="mb-8 grid gap-2 sm:grid-cols-2 md:grid-cols-4">
           <select
@@ -133,6 +221,8 @@ export default function Admin() {
             placeholder="Цена"
             value={newProduct.price}
             onChange={handleChange}
+            type="number"
+            step="0.01"
             className="border p-2 rounded"
           />
           <input
@@ -145,7 +235,7 @@ export default function Admin() {
           <div className="col-span-full flex justify-center mt-2">
             <button
               onClick={handleAdd}
-              className="bg-black text-white px-6 py-2 rounded-lg"
+              className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800"
             >
               Добавить продукт
             </button>

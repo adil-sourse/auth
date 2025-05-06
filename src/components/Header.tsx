@@ -43,7 +43,7 @@ export default function Header() {
               Товары
             </span>
             <span
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/basket")}
               className="hover:text-gray-600 cursor-pointer"
             >
               Корзина

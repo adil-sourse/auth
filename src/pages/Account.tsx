@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
-import input from "../components/ui/input";
-import button from "../components/ui/button";
 import axios from "axios";
 
 export default function Account() {
@@ -18,7 +16,6 @@ export default function Account() {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
-  // Загрузка данных пользователя при монтировании компонента
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -34,7 +31,6 @@ export default function Account() {
     fetchUser();
   }, []);
 
-  // Обработчик начала редактирования
   const handleEdit = (field: string, currentValue: string) => {
     setEditingField(field);
     setEditValue(currentValue);
@@ -42,10 +38,8 @@ export default function Account() {
     setSuccess("");
   };
 
-  // Обработчик сохранения изменений
   const handleSave = async (field: string) => {
     try {
-      // Проверка валидности email
       if (
         field === "email" &&
         editValue &&
@@ -55,7 +49,6 @@ export default function Account() {
         return;
       }
 
-      // Проверка валидности телефона
       if (
         field === "phone" &&
         editValue &&
@@ -67,13 +60,11 @@ export default function Account() {
         return;
       }
 
-      // Проверка логина
       if (field === "login" && !editValue) {
         setError("Логин обязателен");
         return;
       }
 
-      // Проверка пароля
       if (field === "password" && editValue && editValue.length < 8) {
         setError("Пароль должен быть не менее 8 символов");
         return;
@@ -88,7 +79,6 @@ export default function Account() {
         { withCredentials: true }
       );
 
-      // Обновляем локальное состояние пользователя
       setUser((prev) => (prev ? { ...prev, [field]: editValue } : prev));
       setSuccess(response.data.message);
       setEditingField(null);
@@ -98,14 +88,12 @@ export default function Account() {
     }
   };
 
-  // Обработчик отмены редактирования
   const handleCancel = () => {
     setEditingField(null);
     setEditValue("");
     setError("");
   };
 
-  // Обработчик выхода из аккаунта
   const handleLogout = async () => {
     try {
       await axios.post(
