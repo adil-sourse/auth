@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
-import Button from "../components/ui/button";
-import { MdModeEdit } from "react-icons/md";
+import ProductCardAdmin from "../components/CardAdmin";
+import EditProductModal from "../components/ModalAdmin";
 
 interface Product {
   _id: string;
@@ -61,7 +61,7 @@ export default function Admin() {
   };
 
   const handleDelete = async (id: string) => {
-    await fetch("http://localhost:5000/products/${id}", { method: "DELETE" });
+    await fetch(`http://localhost:5000/products/${id}`, { method: "DELETE" });
     setProducts(products.filter((p) => p._id !== id));
   };
 
@@ -154,116 +154,23 @@ export default function Admin() {
 
         <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => (
-            <div
+            <ProductCardAdmin
               key={product._id}
-              className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-xs h-96 mx-auto"
-            >
-              <div className="w-64 h-64 mt-3 md:mt-0 rounded-2xl relative overflow-hidden mx-auto">
-                <button
-                  onClick={() => handleEditClick(product)}
-                  className="absolute top-2 right-2 bg-black bg-opacity-30 rounded-full p-2 hover:bg-opacity-70 transition"
-                >
-                  <MdModeEdit className="text-white size-5" />
-                </button>
-                <img
-                  src={product.image}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="p-5">
-                <h2 className="text-xl font-semibold text-gray-800 mb-2 line-clamp-1">
-                  {product.name}
-                </h2>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm text-gray-500 line-clamp-1">
-                      {product.description}
-                    </p>
-                    <p className="text-lg font-bold text-gray-800 line-clamp-1">
-                      {product.price} ₸
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => handleDelete(product._id)}
-                    type="button"
-                    className="ml-6 px-4 py-2 text-white bg-red-600 text-lg font-medium rounded-lg transition duration-300 w-1/2"
-                  >
-                    Удалить
-                  </Button>
-                </div>
-              </div>
-            </div>
+              product={product}
+              onEdit={handleEditClick}
+              onDelete={handleDelete}
+            />
           ))}
         </ul>
       </div>
 
-      {/* Модальное окно редактирования */}
       {isModalOpen && editProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-lg">
-            <h2 className="text-xl font-bold mb-4 text-center">
-              Редактировать продукт
-            </h2>
-
-            <div className="grid gap-4">
-              <input
-                name="name"
-                placeholder="Название"
-                value={editProduct.name}
-                onChange={handleEditChange}
-                className="border p-2 rounded"
-              />
-              <input
-                name="description"
-                placeholder="Описание"
-                value={editProduct.description}
-                onChange={handleEditChange}
-                className="border p-2 rounded"
-              />
-              <input
-                name="price"
-                placeholder="Цена"
-                value={editProduct.price}
-                onChange={handleEditChange}
-                className="border p-2 rounded"
-              />
-              <input
-                name="image"
-                placeholder="Ссылка на изображение"
-                value={editProduct.image}
-                onChange={handleEditChange}
-                className="border p-2 rounded"
-              />
-              <select
-                name="category"
-                value={editProduct.category}
-                onChange={handleEditChange}
-                className="border p-2 rounded"
-              >
-                <option value="electronics">Электроника</option>
-                <option value="clothing">Одежда</option>
-                <option value="home">Дом</option>
-              </select>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-4">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 rounded-lg bg-gray-300 text-black"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={handleUpdate}
-                className="px-4 py-2 rounded-lg bg-green-600 text-white"
-              >
-                Сохранить
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditProductModal
+          product={editProduct}
+          onChange={handleEditChange}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleUpdate}
+        />
       )}
     </div>
   );

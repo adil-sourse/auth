@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
-import Button from "../components/ui/button";
+import ProductCard from "../components/Card";
 
 interface Product {
   id: number;
@@ -141,40 +141,7 @@ export default function Main() {
 
         <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 mt-10 place-items-center">
           {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-xs h-96 mx-auto"
-            >
-              <div className="w-64 h-64 rounded-2xl relative overflow-hidden mx-auto">
-                <img
-                  src={product.image}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="p-5">
-                <h2 className="text-xl font-semibold text-gray-800 mb-2 line-clamp-1">
-                  {product.name}
-                </h2>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm text-gray-500 line-clamp-1">
-                      {product.description}
-                    </p>
-                    <p className="text-lg font-bold text-gray-800 line-clamp-1">
-                      {product.price} ₸
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    className="ml-6 px-4 py-2 text-white bg-black text-lg font-medium rounded-lg transition duration-300 w-1/2"
-                  >
-                    В корзину
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <ProductCard key={product.id} {...product} />
           ))}
         </div>
       </div>

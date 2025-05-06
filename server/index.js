@@ -172,7 +172,7 @@ app.put("/products/:id", async (req, res) => {
     }
 
     const all = await Product.find();
-    res.json(all); // отправляем обновлённый список продуктов
+    res.json(all);
   } catch (err) {
     console.error("Ошибка при обновлении:", err);
     res.status(500).json({ message: "Ошибка при обновлении продукта" });

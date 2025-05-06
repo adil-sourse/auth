@@ -34,36 +34,36 @@ export default function Header() {
               onClick={() => navigate("/")}
               className="hover:text-gray-600 cursor-pointer"
             >
-              Discover
+              Главная
             </span>
             <span
               onClick={() => navigate("/")}
               className="hover:text-gray-600 cursor-pointer"
             >
-              Creators
+              Товары
             </span>
             <span
               onClick={() => navigate("/")}
               className="hover:text-gray-600 cursor-pointer"
             >
-              Sell
+              Корзина
             </span>
             <span
               onClick={() => navigate("/")}
               className="hover:text-gray-600 cursor-pointer"
             >
-              Stats
+              О нас
             </span>
           </div>
         </div>
 
         <div className="hidden md:flex gap-4">
           <span onClick={handleAccountClick} className="cursor-pointer">
-            <Button>{user ? "Account" : "Login"}</Button>
+            <Button>{user ? "Аккаунт" : "Вход"}</Button>
           </span>
           {user?.role === "admin" && (
             <span onClick={() => navigate("/admin")} className="cursor-pointer">
-              <Button>Admin</Button>
+              <Button>Модерация</Button>
             </span>
           )}
         </div>
@@ -90,7 +90,7 @@ export default function Header() {
             </div>
           ))}
           <div onClick={handleAccountClick}>
-            <Button>{user ? "Account" : "Login"}</Button>
+            <Button>{user ? "Аккаунт" : "Вход"}</Button>
           </div>
           {user?.role === "admin" && (
             <div
@@ -99,7 +99,7 @@ export default function Header() {
                 setMenuOpen(false);
               }}
             >
-              <Button>Admin</Button>
+              <Button>Модерация</Button>
             </div>
           )}
         </div>
