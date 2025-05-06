@@ -179,6 +179,72 @@ app.put("/products/:id", async (req, res) => {
   }
 });
 
+// Получение данных текущего пользователя
+app.get("/user", authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "Пользователь не найден" });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error("Ошибка при получении данных пользователя:", err);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
+// Обновление данных пользователя
+app.put("/user", authenticate, async (req, res) => {
+  const { login, password, name, email, phone } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "Пользователь не найден" });
+    }
+
+    // Обновляем логин
+    if (login) {
+      const exists = await User.findOne({ login });
+      if (exists && exists._id.toString() !== user._id.toString()) {
+        return res.status(400).json({ message: "Логин уже занят" });
+      }
+      user.login = login;
+    }
+
+    // Обновляем пароль
+    if (password) {
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Пароль слишком короткий" });
+      }
+      user.password = await bcrypt.hash(password, 10);
+    }
+
+    // Обновляем email
+    if (email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists && emailExists._id.toString() !== user._id.toString()) {
+        return res
+          .status(400)
+          .json({ message: "Электронная почта уже используется" });
+      }
+      user.email = email;
+    } else if (email === "") {
+      user.email = "";
+    }
+
+    // Обновляем остальные поля
+    user.name = name !== undefined ? name : user.name;
+    user.phone = phone !== undefined ? phone : user.phone;
+
+    await user.save();
+    res.json({ message: "Данные успешно обновлены" });
+  } catch (err) {
+    console.error("Ошибка при обновлении данных пользователя:", err);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
 app.listen(PORT, () =>
   console.log("Сервер запущен на http://localhost:${PORT}")
 );
