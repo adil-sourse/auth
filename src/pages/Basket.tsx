@@ -73,29 +73,43 @@ export default function Basket() {
   };
 
   if (loading) {
-    return <div className="text-center mt-10">Загрузка...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600 text-md animate-pulse">Загрузка...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
-          Корзина
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">
+          Ваша корзина
         </h1>
 
         {error && (
-          <p className="text-red-600 text-sm text-center mb-4">{error}</p>
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded-r-lg text-sm">
+            {error}
+          </div>
         )}
 
         {basket.length === 0 ? (
-          <p className="text-center text-gray-600">Ваша корзина пуста</p>
+          <div className="text-center py-10">
+            <p className="text-gray-500 text-md">Ваша корзина пуста</p>
+            <button
+              onClick={() => navigate("/")}
+              className="mt-3 inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+            >
+              Перейти к покупкам
+            </button>
+          </div>
         ) : (
           <div className="space-y-4">
             {basket.map((item) => (
               <div
                 key={item.productId._id}
-                className="flex items-center bg-white p-4 rounded-lg shadow-md"
+                className="flex items-center bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow"
               >
                 <img
                   src={item.productId.image}
@@ -103,14 +117,18 @@ export default function Basket() {
                   className="w-24 h-24 object-cover rounded-lg mr-4"
                 />
                 <div className="flex-1">
-                  <h2 className="text-lg font-semibold">
+                  <h2 className="text-lg font-semibold text-gray-900">
                     {item.productId.name}
                   </h2>
-                  <p className="text-gray-600">{item.productId.description}</p>
-                  <p className="text-gray-800 font-medium">
-                    Цена: {item.productId.price} ₽
+                  <p className="text-gray-500 mt-1 text-sm line-clamp-2">
+                    {item.productId.description}
                   </p>
-                  <div className="flex items-center mt-2">
+                  <p className="text-gray-900 font-medium mt-1 text-md">
+                    {item.productId.price.toLocaleString()} ₸
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center bg-gray-100 rounded-lg">
                     <button
                       onClick={() =>
                         handleUpdateQuantity(
@@ -118,11 +136,13 @@ export default function Basket() {
                           item.quantity - 1
                         )
                       }
-                      className="px-2 py-1 bg-gray-300 rounded-lg"
+                      className="px-3 py-1 text-gray-600 hover:bg-gray-200 rounded-l-lg transition-colors"
                     >
                       -
                     </button>
-                    <span className="mx-2">{item.quantity}</span>
+                    <span className="px-3 py-1 text-gray-900 text-sm">
+                      {item.quantity}
+                    </span>
                     <button
                       onClick={() =>
                         handleUpdateQuantity(
@@ -130,22 +150,30 @@ export default function Basket() {
                           item.quantity + 1
                         )
                       }
-                      className="px-2 py-1 bg-gray-300 rounded-lg"
+                      className="px-3 py-1 text-gray-600 hover:bg-gray-200 rounded-r-lg transition-colors"
                     >
                       +
                     </button>
                   </div>
+                  <button
+                    onClick={() => handleRemoveItem(item.productId._id)}
+                    className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors "
+                  >
+                    Удалить
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleRemoveItem(item.productId._id)}
-                  className="ml-4 text-red-600 hover:text-red-800"
-                >
-                  Удалить
-                </button>
               </div>
             ))}
-            <div className="text-right mt-6">
-              <p className="text-xl font-bold">Итого: {calculateTotal()} ₽</p>
+            <div className="flex justify-between items-center mt-6 bg-white p-4 rounded-lg shadow-sm">
+              <p className="text-xl font-bold text-gray-900">
+                Итого: {calculateTotal()} ₸
+              </p>
+              <button
+                onClick={() => navigate("/checkout")}
+                className="bg-black text-white px-6 py-2 rounded-lg hover:scale-105 transition-scale duration-100 text-md font-medium"
+              >
+                Оформить заказ
+              </button>
             </div>
           </div>
         )}

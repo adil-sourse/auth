@@ -73,32 +73,36 @@ export default function Main() {
         <h1 className="font-bold text-3xl text-center mt-3 mb-10">Товары</h1>
 
         <div className="flex gap-4 mx-10 md:mx-0 items-center">
-          <input
-            type="text"
-            value={searchProdInput}
-            onChange={(e) => setSearchProdInput(e.target.value)}
-            placeholder="Поиск"
-            className="border p-2 rounded-lg focus:outline-none w-full"
-          />
+          <div className="flex w-full sm:w-auto flex-1">
+            <input
+              type="text"
+              value={searchProdInput}
+              onChange={(e) => setSearchProdInput(e.target.value)}
+              placeholder="Поиск товаров..."
+              className="w-full p-3 border border-gray-200 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white shadow-sm"
+            />
+            <button
+              onClick={() => setSearchProd(searchProdInput)}
+              className="bg-black text-white px-6 py-3 rounded-r-lg hover:bg-gray-800 transition-colors text-sm font-medium shadow-sm"
+            >
+              Поиск
+            </button>
+          </div>
 
           <button
-            className="bg-black text-white px-4 h-10 rounded-lg"
-            onClick={() => setSearchProd(searchProdInput)}
+            onClick={() => setShowFilters((prev) => !prev)}
+            className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium shadow-sm"
           >
-            Поиск
-          </button>
-
-          <button onClick={() => setShowFilters((prev) => !prev)}>
-            Фильтр
+            {showFilters ? "Фильтры" : "Фильтры"}
           </button>
         </div>
 
         {showFilters && (
-          <div className="bg-slate-100 p-4 mt-4 rounded-lg mx-10 md:mx-0 flex flex-col sm:flex-row gap-4 flex-wrap">
+          <div className="bg-white p-6 rounded-xl shadow-sm mb-8 flex flex-col sm:flex-row gap-4 flex-wrap transition-all duration-300 animate-fade-in">
             <select
               value={selectedCategoryInput}
               onChange={(e) => setSelectedCategoryInput(e.target.value)}
-              className="border p-2 rounded-lg w-full sm:w-1/4"
+              className="border border-gray-200 p-3 rounded-lg w-full sm:w-1/4 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
             >
               <option value="">Все категории</option>
               <option value="electronics">Электроника</option>
@@ -111,7 +115,7 @@ export default function Main() {
               value={minPriceInput}
               onChange={(e) => setMinPriceInput(e.target.value)}
               placeholder="Мин. цена"
-              className="border p-2 rounded-lg w-full sm:w-1/4"
+              className="border border-gray-200 p-3 rounded-lg w-full sm:w-1/4 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
             />
 
             <input
@@ -119,19 +123,19 @@ export default function Main() {
               value={maxPriceInput}
               onChange={(e) => setMaxPriceInput(e.target.value)}
               placeholder="Макс. цена"
-              className="border p-2 rounded-lg w-full sm:w-1/4"
+              className="border border-gray-200 p-3 rounded-lg w-full sm:w-1/4 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
             />
 
-            <div className="flex gap-2 mt-2 sm:mt-0">
+            <div className="flex gap-3 w-full sm:w-auto">
               <button
                 onClick={handleApplyFilters}
-                className="bg-black text-white px-4 py-2 rounded-lg"
+                className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium shadow-sm flex-1"
               >
                 Применить
               </button>
               <button
                 onClick={handleResetFilters}
-                className=" text-black px-4 py-2 rounded-lg"
+                className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium shadow-sm flex-1"
               >
                 Сбросить
               </button>

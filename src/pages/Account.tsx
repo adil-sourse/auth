@@ -109,7 +109,11 @@ export default function Account() {
   };
 
   if (!user) {
-    return <div>Загрузка...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600 text-md animate-pulse">Загрузка...</div>
+      </div>
+    );
   }
 
   const fields = [
@@ -126,45 +130,52 @@ export default function Account() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <Header />
-      <div className="px-4 py-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
-          Аккаунт
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-10 tracking-tight">
+          Личный кабинет
         </h1>
 
-        <div className="max-w-md mx-auto space-y-4">
+        <div className="bg-white shadow-lg rounded-2xl p-8 space-y-6 transition-all duration-300 hover:shadow-xl">
           {fields.map((field) => (
-            <div key={field.key} className="flex items-center flex-wrap gap-2">
+            <div
+              key={field.key}
+              className="flex items-center justify-between py-4 border-b border-gray-100 last:border-b-0 transition-all duration-200 hover:bg-gray-50 rounded-lg px-4"
+            >
               {editingField === field.key ? (
-                <>
+                <div className="flex items-center gap-4 w-full">
                   <input
                     type={field.type}
                     value={editValue}
                     placeholder={field.label}
                     onChange={(e) => setEditValue(e.target.value)}
-                    className="inline-block min-w-[100px] max-w-[200px] text-sm p-1"
+                    className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-gray-50 transition-colors"
                     autoFocus
                   />
                   <button
                     onClick={() => handleSave(field.key)}
-                    className="px-2 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium shadow-sm"
                   >
                     Сохранить
                   </button>
                   <button
                     onClick={handleCancel}
-                    className="px-2 py-1 bg-gray-400 text-white text-sm rounded-lg hover:bg-gray-500"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium shadow-sm"
                   >
                     Отмена
                   </button>
-                </>
+                </div>
               ) : (
-                <>
-                  <span className="font-medium">{field.label}: </span>
-                  <span className="text-gray-600 mr-2">
-                    {field.value || "Нет данных"}
-                  </span>
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center">
+                    <span className="font-semibold text-gray-900 text-sm w-32">
+                      {field.label}:
+                    </span>
+                    <span className="text-gray-600 text-sm">
+                      {field.value || "Нет данных"}
+                    </span>
+                  </div>
                   <button
                     onClick={() =>
                       handleEdit(
@@ -172,30 +183,47 @@ export default function Account() {
                         field.value === "********" ? "" : field.value
                       )
                     }
-                    className="px-3 py-1 text-blue-600 text-sm hover:text-blue-800"
+                    className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors hover:underline"
                   >
                     Изменить
                   </button>
-                </>
+                </div>
               )}
             </div>
           ))}
 
           {error && (
-            <p className="text-red-600 text-sm mt-4 text-center">{error}</p>
+            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg text-sm animate-fade-in">
+              {error}
+            </div>
           )}
           {success && (
-            <p className="text-green-600 text-sm mt-4 text-center">{success}</p>
+            <div className="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-lg text-sm animate-fade-in">
+              {success}
+            </div>
           )}
 
-          <button
-            onClick={handleLogout}
-            className="mt-20 py-1 px-3 max-w-xs mx-auto block bg-red-600 text-white font-medium rounded-lg shadow-md hover:bg-red-700"
-          >
-            Выйти из аккаунта
-          </button>
+          <div className="flex justify-center mt-10">
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              Выйти из аккаунта
+            </button>
+          </div>
         </div>
       </div>
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+          }
+        `}
+      </style>
     </div>
   );
 }

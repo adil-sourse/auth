@@ -190,7 +190,7 @@ export default function Admin() {
           <p className="text-red-600 text-sm text-center mb-4">{error}</p>
         )}
 
-        <div className="mb-8 grid gap-2 sm:grid-cols-2 md:grid-cols-4">
+        <div className="mb-8 grid gap-2 sm:grid-cols-2 md:grid-cols-4 bg-white rounded-lg shadow-lg p-10">
           <select
             value={selectedCategory}
             onChange={handleCategoryChange}
@@ -241,6 +241,8 @@ export default function Admin() {
             </button>
           </div>
         </div>
+
+        <div className="text-center mt-10 mb-5 text-2xl">Список товаров</div>
 
         <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => (

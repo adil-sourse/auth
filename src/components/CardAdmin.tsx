@@ -1,5 +1,4 @@
 import { MdModeEdit } from "react-icons/md";
-import Button from "./ui/button";
 
 interface ProductCardAdminProps {
   product: {
@@ -48,13 +47,13 @@ export default function ProductCardAdmin({
               {product.price} ₸
             </p>
           </div>
-          <Button
+          <button
             onClick={() => onDelete(product._id)}
             type="button"
-            className="ml-6 px-4 py-2 text-white bg-red-600 text-lg font-medium rounded-lg transition duration-300 w-32"
+            className="ml-6 py-2 text-white text-sm bg-red-600 hover:bg-red-500  rounded-lg transition duration-300 w-32 z-10 "
           >
             Удалить
-          </Button>
+          </button>
         </div>
       </div>
     </div>

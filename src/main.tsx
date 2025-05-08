@@ -8,9 +8,11 @@ import Register from "./pages/Register";
 import Account from "./pages/Account";
 import Admin from "./pages/Admin";
 import Basket from "./pages/Basket";
+import { Toaster } from "react-hot-toast";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <Toaster position="top-center" />
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Main />} />
