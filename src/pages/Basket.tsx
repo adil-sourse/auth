@@ -81,7 +81,7 @@ export default function Basket() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       <Header />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">
@@ -98,8 +98,8 @@ export default function Basket() {
           <div className="text-center py-10">
             <p className="text-gray-500 text-md">Ваша корзина пуста</p>
             <button
-              onClick={() => navigate("/")}
-              className="mt-3 inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+              onClick={() => navigate("/products")}
+              className="mt-10 inline-block bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm"
             >
               Перейти к покупкам
             </button>
@@ -109,7 +109,7 @@ export default function Basket() {
             {basket.map((item) => (
               <div
                 key={item.productId._id}
-                className="flex items-center bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                className="flex items-center bg-white px-4 py-2 rounded-lg shadow-lg hover:shadow-md transition-shadow"
               >
                 <img
                   src={item.productId.image}
@@ -164,7 +164,7 @@ export default function Basket() {
                 </div>
               </div>
             ))}
-            <div className="flex justify-between items-center mt-6 bg-white p-4 rounded-lg shadow-sm">
+            <div className="flex justify-between items-center mt-6 bg-white p-4 rounded-lg shadow-lg">
               <p className="text-xl font-bold text-gray-900">
                 Итого: {calculateTotal()} ₸
               </p>

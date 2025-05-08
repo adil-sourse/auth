@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { IoMdClose } from "react-icons/io";
 import toast from "react-hot-toast";
 
@@ -12,6 +12,13 @@ interface Product {
   category: string;
 }
 
+interface BasketItem {
+  productId: {
+    _id: string;
+  };
+  quantity: number;
+}
+
 interface ProductCardProps extends Product {}
 
 export default function ProductCard({
@@ -21,6 +28,29 @@ export default function ProductCard({
   description,
   price,
 }: ProductCardProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInBasket, setIsInBasket] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBasket = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/basket", {
+          withCredentials: true,
+        });
+        const basket: BasketItem[] = response.data;
+
+        const inBasket = basket.some((item) => item.productId._id === _id);
+        setIsInBasket(inBasket);
+        setLoading(false);
+      } catch (err: any) {
+        console.error("Ошибка загрузки корзины", err);
+        setLoading(false);
+      }
+    };
+    fetchBasket();
+  }, [_id]);
+
   const handleAddToBasket = async () => {
     try {
       await axios.post(
@@ -29,6 +59,7 @@ export default function ProductCard({
         { withCredentials: true }
       );
       toast.success("Товар добавлен в корзину!");
+      setIsInBasket(true);
     } catch (err: any) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         window.location.href = "/login";
@@ -40,11 +71,9 @@ export default function ProductCard({
     }
   };
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-xs h-96 mx-auto hover:cursor-pointer hover:scale-105 duration-500 transition-all ">
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-xs h-96 mx-auto hover:cursor-pointer hover:scale-105 duration-500 transition-all">
         <div
           className="w-64 h-64 rounded-2xl relative overflow-hidden mx-auto"
           onClick={() => setIsModalOpen(true)}
@@ -71,17 +100,22 @@ export default function ProductCard({
             <button
               type="button"
               onClick={handleAddToBasket}
-              className="ml-6 py-2 text-white text-sm bg-black hover:bg-gray-800  rounded-lg transition duration-300 w-32 z-10 "
+              disabled={isInBasket || loading}
+              className={`ml-6 py-2    ${
+                isInBasket
+                  ? "text-gray-600 cursor-not-allowed text-md"
+                  : "bg-black hover:bg-gray-800 text-white text-sm"
+              } rounded-lg transition duration-300 w-32 z-10`}
             >
-              В корзину
+              {loading ? "Загрузка..." : isInBasket ? "В корзине" : "В корзину"}
             </button>
           </div>
         </div>
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50 ">
-          <div className="bg-white rounded-2xl p-8 max-w-3xl w-full mx-4 shadow-2xl ">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
+          <div className="bg-white rounded-2xl pb-8 pt-4 px-8 max-w-3xl w-full mx-4 shadow-2xl">
             <div className="flex justify-end">
               <button
                 className="text-gray-600 hover:text-gray-900 transition-colors duration-200"
@@ -113,9 +147,18 @@ export default function ProductCard({
                 <div className="flex space-x-4">
                   <button
                     onClick={handleAddToBasket}
-                    className="bg-black text-white px-6 py-3 rounded-xl font-semibold text-lg hover:bg-gray-800 transition-colors duration-300 w-full"
+                    disabled={isInBasket || loading}
+                    className={`  px-6 py-3 rounded-xl font-semibold text-lg ${
+                      isInBasket
+                        ? "text-gray-600 cursor-not-allowed"
+                        : "hover:bg-gray-800 bg-black text-white"
+                    } transition-colors duration-300 w-full`}
                   >
-                    Добавить в корзину
+                    {loading
+                      ? "Загрузка..."
+                      : isInBasket
+                      ? "В корзине"
+                      : "Добавить в корзину"}
                   </button>
                 </div>
               </div>

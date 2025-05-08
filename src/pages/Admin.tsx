@@ -179,91 +179,149 @@ export default function Admin() {
   };
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="p-4 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-center">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">
           Модерация товаров
         </h1>
 
         {error && (
-          <p className="text-red-600 text-sm text-center mb-4">{error}</p>
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded-r-lg text-sm text-center">
+            {error}
+          </div>
         )}
 
-        <div className="mb-8 grid gap-2 sm:grid-cols-2 md:grid-cols-4 bg-white rounded-lg shadow-lg p-10">
-          <select
-            value={selectedCategory}
-            onChange={handleCategoryChange}
-            className="border p-2 rounded-lg w-full"
-          >
-            <option value="">Выберите категорию</option>
-            <option value="electronics">Электроника</option>
-            <option value="clothing">Одежда</option>
-            <option value="home">Дом</option>
-          </select>
-
-          <input
-            name="name"
-            placeholder="Название"
-            value={newProduct.name}
-            onChange={handleChange}
-            className="border p-2 rounded"
-          />
-          <input
-            name="description"
-            placeholder="Описание"
-            value={newProduct.description}
-            onChange={handleChange}
-            className="border p-2 rounded"
-          />
-          <input
-            name="price"
-            placeholder="Цена"
-            value={newProduct.price}
-            onChange={handleChange}
-            type="number"
-            step="0.01"
-            className="border p-2 rounded"
-          />
-          <input
-            name="image"
-            placeholder="Ссылка на изображение"
-            value={newProduct.image}
-            onChange={handleChange}
-            className="border p-2 rounded"
-          />
-          <div className="col-span-full flex justify-center mt-2">
+        <div className="bg-white p-6 rounded-lg shadow-lg mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Добавить новый продукт
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Название
+              </label>
+              <input
+                name="name"
+                id="name"
+                placeholder="Введите название"
+                value={newProduct.name}
+                onChange={handleChange}
+                className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="category"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Категория
+              </label>
+              <select
+                id="category"
+                value={selectedCategory}
+                onChange={handleCategoryChange}
+                className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+              >
+                <option value="">Выберите категорию</option>
+                <option value="electronics">Электроника</option>
+                <option value="clothing">Одежда</option>
+                <option value="home">Дом</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="price"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Цена (₸)
+              </label>
+              <input
+                name="price"
+                id="price"
+                placeholder="Введите цену"
+                value={newProduct.price}
+                onChange={handleChange}
+                type="number"
+                step="0.01"
+                className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="image"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Ссылка на изображение
+              </label>
+              <input
+                name="image"
+                id="image"
+                placeholder="Введите URL изображения"
+                value={newProduct.image}
+                onChange={handleChange}
+                className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Описание
+              </label>
+              <input
+                name="description"
+                id="description"
+                placeholder="Введите описание"
+                value={newProduct.description}
+                onChange={handleChange}
+                className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="mt-4 flex justify-center">
             <button
               onClick={handleAdd}
-              className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800"
+              className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
             >
               Добавить продукт
             </button>
           </div>
         </div>
 
-        <div className="text-center mt-10 mb-5 text-2xl">Список товаров</div>
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 text-center">
+            Список товаров
+          </h2>
+          {products.length === 0 ? (
+            <p className="text-gray-500 text-center">Товары отсутствуют</p>
+          ) : (
+            <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {products.map((product) => (
+                <ProductCardAdmin
+                  key={product._id}
+                  product={product}
+                  onEdit={handleEditClick}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
 
-        <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((product) => (
-            <ProductCardAdmin
-              key={product._id}
-              product={product}
-              onEdit={handleEditClick}
-              onDelete={handleDelete}
-            />
-          ))}
-        </ul>
+        {isModalOpen && editProduct && (
+          <EditProductModal
+            product={editProduct}
+            onChange={handleEditChange}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleUpdate}
+          />
+        )}
       </div>
-
-      {isModalOpen && editProduct && (
-        <EditProductModal
-          product={editProduct}
-          onChange={handleEditChange}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleUpdate}
-        />
-      )}
     </div>
   );
 }

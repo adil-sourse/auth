@@ -37,7 +37,7 @@ export default function Header() {
               Главная
             </span>
             <span
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/products")}
               className="hover:text-gray-600 cursor-pointer"
             >
               Товары
