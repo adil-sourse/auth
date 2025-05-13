@@ -90,7 +90,7 @@ export default function ProductCard({
           </h2>
           <div className="flex justify-between items-center">
             <div onClick={() => setIsModalOpen(true)}>
-              <p className="text-sm text-gray-500 line-clamp-1">
+              <p className="text-sm text-gray-500 line-clamp-1 max-w-44">
                 {description}
               </p>
               <p className="text-lg font-bold text-gray-800 line-clamp-1">
@@ -137,7 +137,7 @@ export default function ProductCard({
                   <h2 className="text-3xl font-bold text-gray-900 mb-3">
                     {name}
                   </h2>
-                  <p className="text-gray-600 text-lg mb-4 leading-relaxed">
+                  <p className="text-gray-600 text-lg mb-4 leading-relaxed ">
                     {description}
                   </p>
                   <div className="text-3xl font-bold text-black mb-6">

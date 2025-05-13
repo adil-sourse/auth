@@ -40,7 +40,7 @@ export default function ProductCardAdmin({
         </h2>
         <div className="flex justify-between items-center">
           <div>
-            <p className="text-sm text-gray-500 line-clamp-1">
+            <p className="text-sm text-gray-500 line-clamp-1 max-w-44">
               {product.description}
             </p>
             <p className="text-lg font-bold text-gray-800 line-clamp-1">

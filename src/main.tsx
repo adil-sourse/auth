@@ -8,9 +8,11 @@ import Account from "./pages/Account";
 import Admin from "./pages/Admin";
 import Basket from "./pages/Basket";
 import { Toaster } from "react-hot-toast";
-import Checkout from "./pages/CheckOut";
+import Checkout from "./pages/Checkout";
 import Products from "./pages/Products";
 import Main from "./pages/Main";
+import OrderHistory from "./pages/OrderHistory";
+import AddProduct from "./pages/AddProduct";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -25,6 +27,8 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/admin" element={<Admin />} />
         <Route path="/basket" element={<Basket />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-history" element={<OrderHistory />} />
+        <Route path="/add-product" element={<AddProduct />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

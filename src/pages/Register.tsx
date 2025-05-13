@@ -7,24 +7,43 @@ import axios from "axios";
 export default function Register() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Client-side validation
+    if (!login || !email || !password) {
+      setError("Все поля обязательны");
+      return;
+    }
+
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      setError("Введите корректный адрес электронной почты");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Пароль должен содержать не менее 8 символов");
+      return;
+    }
+
     try {
       await axios.post(
         "http://localhost:5000/register",
         {
           login,
+          email,
           password,
           role: "user",
         },
         { withCredentials: true }
       );
 
-      navigate("/");
+      navigate("/login");
     } catch (err: any) {
       setError(err.response?.data?.message || "Ошибка при регистрации");
     }
@@ -39,6 +58,13 @@ export default function Register() {
         <h1 className="font-bold text-3xl text-center mb-6 text-gray-800">
           Регистрация
         </h1>
+        <Input
+          type="email"
+          value={email}
+          placeholder="Почта"
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
         <Input
           type="text"
           value={login}

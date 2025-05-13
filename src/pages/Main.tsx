@@ -43,14 +43,14 @@ export default function Main() {
           <div className="flex flex-col md:flex-row gap-8 items-center">
             <div className="md:w-1/2">
               <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
-                Основанная в 2020 году, наша компания начала с небольшой команды
-                энтузиастов, стремящихся сделать онлайн-шопинг простым и
-                приятным. Сегодня мы предлагаем широкий ассортимент товаров — от
-                электроники до одежды, с доставкой по всему миру.
+                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Saepe
+                necessitatibus perspiciatis delectus quidem ad illum nobis
+                autem, ut exercitationem laudantium rem, at sequi! Excepturi
+                molestias perferendis voluptatum sint, unde labore!
               </p>
               <p className="text-gray-600 text-base sm:text-lg leading-relaxed mt-4">
-                Мы верим в качество, доступность и отличный сервис. Наша цель —
-                помочь каждому найти то, что ему нужно, по лучшей цене.
+                Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                Perspiciatis quam doloribus ad consectetur voluptates iure!
               </p>
             </div>
             <div className="md:w-1/2">

@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
 import User from "./models/user.js";
 import Product from "./models/product.js";
+import Order from "./models/order.js";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 
@@ -15,7 +16,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const app = express();
 const PORT = 5000;
 
-mongoose.connect("mongodb://localhost:27017/users", {
+mongoose.connect("mongodb://localhost:27017/shop", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -61,26 +62,41 @@ app.get("/me", authenticate, (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-  const { login, password, role } = req.body;
+  const { login, email, password, role } = req.body;
 
-  if (!login || !password) {
-    return res.status(400).json({ message: "Логин и пароль обязательны" });
+  if (!login || !email || !password) {
+    return res
+      .status(400)
+      .json({ message: "Логин, email и пароль обязательны" });
   }
 
   if (password.length < 8) {
-    return res.status(400).json({ message: "Пароль слишком короткий" });
+    return res
+      .status(400)
+      .json({ message: "Пароль должен содержать не менее 8 символов" });
+  }
+
+  const emailRegex = /^\S+@\S+\.\S+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Некорректный формат email" });
   }
 
   try {
-    const exists = await User.findOne({ login });
-    if (exists) {
-      return res.status(400).json({ message: "Пользователь уже существует" });
+    const existingUser = await User.findOne({ $or: [{ login }, { email }] });
+    if (existingUser) {
+      return res.status(400).json({
+        message:
+          existingUser.login === login
+            ? "Логин уже существует"
+            : "Email уже используется",
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
       login,
+      email,
       password: hashedPassword,
       role: role || "user",
       basket: [],
@@ -91,6 +107,13 @@ app.post("/register", async (req, res) => {
     res.status(201).json({ message: "Успешная регистрация" });
   } catch (err) {
     console.error("Ошибка регистрации:", err);
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      return res.status(400).json({
+        message:
+          field === "email" ? "Email уже используется" : "Логин уже существует",
+      });
+    }
     res.status(500).json({ message: "Ошибка сервера при регистрации" });
   }
 });
@@ -100,16 +123,11 @@ app.post("/login", async (req, res) => {
 
   try {
     const user = await User.findOne({ login });
-    if (!user) {
-      console.error("Пользователь не найден");
-      return res.status(401).json({ message: "Неверные данные" });
-    }
+    if (!user) return res.status(401).json({ message: "Неверные данные" });
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      console.error("Неверный пароль");
+    if (!isPasswordValid)
       return res.status(401).json({ message: "Неверные данные" });
-    }
 
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
       expiresIn: "1d",
@@ -137,13 +155,24 @@ app.post("/logout", (req, res) => {
   res.json({ message: "Вы вышли" });
 });
 
-app.post("/products", authenticate, adminOnly, async (req, res) => {
+app.get("/products", async (req, res) => {
   try {
-    const { name, price, description, category, image } = req.body;
-    if (!name || !price) {
-      return res.status(400).json({ message: "Название и цена обязательны" });
-    }
+    const products = await Product.find();
+    res.status(200).json(products);
+  } catch (err) {
+    console.error("Ошибка при получении продуктов:", err);
+    res.status(500).json({ message: "Ошибка при получении продуктов" });
+  }
+});
 
+app.post("/products", authenticate, adminOnly, async (req, res) => {
+  const { name, price, description, category, image } = req.body;
+
+  if (!name || !price) {
+    return res.status(400).json({ message: "Название и цена обязательны" });
+  }
+
+  try {
     const newProduct = new Product({
       name,
       price: parseFloat(price),
@@ -158,38 +187,7 @@ app.post("/products", authenticate, adminOnly, async (req, res) => {
     res.status(201).json(all);
   } catch (err) {
     console.error("Ошибка при добавлении продукта:", err);
-    res.status(500).json({ message: err.message || "Ошибка при добавлении" });
-  }
-});
-
-app.get("/products", async (req, res) => {
-  try {
-    const products = await Product.find();
-    res.status(200).json(products);
-  } catch (err) {
-    console.error("Ошибка при получении продуктов:", err);
-    res.status(500).json({ message: "Ошибка при получении продуктов" });
-  }
-});
-
-app.delete("/products/:id", authenticate, adminOnly, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const product = await Product.findByIdAndDelete(id);
-    if (!product) {
-      return res.status(404).json({ message: "Продукт не найден" });
-    }
-
-    await User.updateMany(
-      { "basket.productId": id },
-      { $pull: { basket: { productId: id } } }
-    );
-
-    const all = await Product.find();
-    res.json(all);
-  } catch (err) {
-    console.error("Ошибка при удалении продукта:", err);
-    res.status(500).json({ message: "Ошибка при удалении продукта" });
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -222,12 +220,33 @@ app.put("/products/:id", authenticate, adminOnly, async (req, res) => {
   }
 });
 
+app.delete("/products/:id", authenticate, adminOnly, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const product = await Product.findByIdAndDelete(id);
+    if (!product) return res.status(404).json({ message: "Продукт не найден" });
+
+    await User.updateMany(
+      { "basket.productId": id },
+      {
+        $pull: { basket: { productId: id } },
+      }
+    );
+
+    const all = await Product.find();
+    res.json(all);
+  } catch (err) {
+    console.error("Ошибка при удалении продукта:", err);
+    res.status(500).json({ message: "Ошибка при удалении продукта" });
+  }
+});
+
 app.get("/user", authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    if (!user) {
+    if (!user)
       return res.status(404).json({ message: "Пользователь не найден" });
-    }
     res.json(user);
   } catch (err) {
     console.error("Ошибка при получении данных пользователя:", err);
@@ -236,13 +255,12 @@ app.get("/user", authenticate, async (req, res) => {
 });
 
 app.put("/user", authenticate, async (req, res) => {
-  const { login, password, name, email, phone } = req.body;
+  const { login, password, email, name, phone } = req.body;
 
   try {
     const user = await User.findById(req.user.id);
-    if (!user) {
+    if (!user)
       return res.status(404).json({ message: "Пользователь не найден" });
-    }
 
     if (login) {
       const exists = await User.findOne({ login });
@@ -260,6 +278,10 @@ app.put("/user", authenticate, async (req, res) => {
     }
 
     if (email) {
+      const emailRegex = /^\S+@\S+\.\S+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Некорректный формат email" });
+      }
       const emailExists = await User.findOne({ email });
       if (emailExists && emailExists._id.toString() !== user._id.toString()) {
         return res
@@ -267,17 +289,22 @@ app.put("/user", authenticate, async (req, res) => {
           .json({ message: "Электронная почта уже используется" });
       }
       user.email = email;
-    } else if (email === "") {
-      user.email = "";
     }
 
-    user.name = name !== undefined ? name : user.name;
-    user.phone = phone !== undefined ? phone : user.phone;
+    user.name = name ?? user.name;
+    user.phone = phone ?? user.phone;
 
     await user.save();
     res.json({ message: "Данные успешно обновлены" });
   } catch (err) {
     console.error("Ошибка при обновлении данных пользователя:", err);
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      return res.status(400).json({
+        message:
+          field === "email" ? "Email уже используется" : "Логин уже существует",
+      });
+    }
     res.status(500).json({ message: "Ошибка сервера" });
   }
 });
@@ -287,9 +314,8 @@ app.get("/basket", authenticate, async (req, res) => {
     const user = await User.findById(req.user.id)
       .populate("basket.productId")
       .select("basket");
-    if (!user) {
+    if (!user)
       return res.status(404).json({ message: "Пользователь не найден" });
-    }
     const validBasket = user.basket.filter((item) => item.productId);
     res.json(validBasket);
   } catch (err) {
@@ -300,7 +326,6 @@ app.get("/basket", authenticate, async (req, res) => {
 
 app.post("/basket", authenticate, async (req, res) => {
   const { productId, quantity } = req.body;
-
   if (!productId || !quantity || quantity < 1) {
     return res
       .status(400)
@@ -309,21 +334,17 @@ app.post("/basket", authenticate, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: "Пользователь не найден" });
-    }
-
     const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ message: "Продукт не найден" });
-    }
+    if (!user || !product)
+      return res
+        .status(404)
+        .json({ message: "Пользователь или продукт не найден" });
 
-    const basketItemIndex = user.basket.findIndex(
+    const index = user.basket.findIndex(
       (item) => item.productId.toString() === productId
     );
-
-    if (basketItemIndex >= 0) {
-      user.basket[basketItemIndex].quantity += quantity;
+    if (index >= 0) {
+      user.basket[index].quantity += quantity;
     } else {
       user.basket.push({ productId, quantity });
     }
@@ -350,19 +371,13 @@ app.put("/basket/:productId", authenticate, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: "Пользователь не найден" });
-    }
-
-    const basketItemIndex = user.basket.findIndex(
+    const index = user.basket.findIndex(
       (item) => item.productId.toString() === productId
     );
-
-    if (basketItemIndex === -1) {
+    if (index === -1)
       return res.status(404).json({ message: "Продукт не найден в корзине" });
-    }
 
-    user.basket[basketItemIndex].quantity = quantity;
+    user.basket[index].quantity = quantity;
     await user.save();
 
     const updatedUser = await User.findById(req.user.id)
@@ -381,10 +396,6 @@ app.delete("/basket/:productId", authenticate, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: "Пользователь не найден" });
-    }
-
     user.basket = user.basket.filter(
       (item) => item.productId.toString() !== productId
     );
@@ -398,6 +409,109 @@ app.delete("/basket/:productId", authenticate, async (req, res) => {
   } catch (err) {
     console.error("Ошибка при удалении из корзины:", err);
     res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
+app.post("/checkout", authenticate, async (req, res) => {
+  const {
+    basket,
+    firstName,
+    lastName,
+    email,
+    phone,
+    address,
+    city,
+    postalCode,
+    paymentMethod,
+  } = req.body;
+
+  try {
+    if (
+      !basket ||
+      !basket.length ||
+      !firstName ||
+      !address ||
+      !city ||
+      !postalCode ||
+      !paymentMethod
+    ) {
+      return res.status(400).json({ message: "Все поля обязательны" });
+    }
+
+    const items = await Promise.all(
+      basket.map(async (item) => {
+        const product = await Product.findById(item.productId._id);
+        if (!product) {
+          throw new Error("Продукт не найден");
+        }
+        return {
+          productId: item.productId._id,
+          quantity: item.quantity,
+          price: product.price,
+        };
+      })
+    );
+
+    const total = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    const order = new Order({
+      userId: req.user.id,
+      items,
+      total,
+      shippingAddress: {
+        firstName,
+        lastName,
+        email,
+        phone,
+        address,
+        city,
+        postalCode,
+      },
+      paymentMethod,
+    });
+
+    await order.save();
+
+    await User.findByIdAndUpdate(req.user.id, { $set: { basket: [] } });
+
+    res
+      .status(201)
+      .json({ message: "Заказ успешно создан", orderId: order._id });
+  } catch (err) {
+    console.error("Ошибка при оформлении заказа:", err);
+    res.status(500).json({ message: "Ошибка сервера при оформлении заказа" });
+  }
+});
+
+app.get("/orders", authenticate, adminOnly, async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("userId", "login email")
+      .populate("items.productId", "name price");
+    res.status(200).json(orders);
+  } catch (err) {
+    console.error("Ошибка при получении заказов:", err);
+    res.status(500).json({ message: "Ошибка при получении заказов" });
+  }
+});
+
+app.delete("/orders/:id", authenticate, adminOnly, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const order = await Order.findByIdAndDelete(id);
+    if (!order) return res.status(404).json({ message: "Заказ не найден" });
+
+    const orders = await Order.find()
+      .populate("userId", "login email")
+      .populate("items.productId", "name price");
+    res.json(orders);
+  } catch (err) {
+    console.error("Ошибка при удалении заказа:", err);
+    res.status(500).json({ message: "Ошибка при удалении заказа" });
   }
 });
 

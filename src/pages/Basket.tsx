@@ -96,7 +96,9 @@ export default function Basket() {
 
         {basket.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-gray-500 text-md">Ваша корзина пуста</p>
+            <p className="text-gray-500 dark:text-white text-md">
+              Ваша корзина пуста
+            </p>
             <button
               onClick={() => navigate("/products")}
               className="mt-10 inline-block bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm"
@@ -127,7 +129,7 @@ export default function Basket() {
                     {item.productId.price.toLocaleString()} ₸
                   </p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-4">
                   <div className="flex items-center bg-gray-100 rounded-lg">
                     <button
                       onClick={() =>

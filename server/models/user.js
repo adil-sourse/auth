@@ -5,7 +5,14 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, default: "user" },
   name: { type: String, default: "" },
-  email: { type: String, default: "", unique: true, sparse: true },
+  email: {
+    type: String,
+    required: [true, "Email is required"],
+    unique: true,
+    trim: true,
+    lowercase: true,
+    match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
+  },
   phone: { type: String, default: "" },
   basket: [
     {
