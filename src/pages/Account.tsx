@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import axios from "axios";
+import Chat from "../components/Chat";
 
 export default function Account() {
   const [user, setUser] = useState<{
@@ -9,11 +10,13 @@ export default function Account() {
     name: string;
     email: string;
     phone: string;
+    _id: string; // Добавляем _id для userId
   } | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,7 +25,7 @@ export default function Account() {
         const response = await axios.get("http://localhost:5000/user", {
           withCredentials: true,
         });
-        setUser(response.data);
+        setUser(response.data); // Предполагаем, что _id приходит от сервера
       } catch (err: any) {
         console.error("Ошибка при загрузке данных пользователя:", err);
         setError(err.response?.data?.message || "Ошибка загрузки данных");
@@ -203,7 +206,13 @@ export default function Account() {
             </div>
           )}
 
-          <div className="flex justify-center mt-10">
+          <div className="flex justify-center mt-10 space-x-4">
+            <button
+              onClick={() => setIsChatOpen(true)}
+              className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors text-sm font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              Поддержка
+            </button>
             <button
               onClick={handleLogout}
               className="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
@@ -213,17 +222,12 @@ export default function Account() {
           </div>
         </div>
       </div>
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .animate-fade-in {
-            animation: fadeIn 0.3s ease-out;
-          }
-        `}
-      </style>
+
+      <Chat
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        userId={user._id}
+      />
     </div>
   );
 }

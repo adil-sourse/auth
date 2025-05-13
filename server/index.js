@@ -6,8 +6,10 @@ import jwt from "jsonwebtoken";
 import User from "./models/user.js";
 import Product from "./models/product.js";
 import Order from "./models/order.js";
+import Chat from "./models/chat.js";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
+import axios from "axios";
 
 dotenv.config();
 
@@ -35,6 +37,7 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 
+// Middleware для аутентификации
 function authenticate(req, res, next) {
   const token = req.cookies.token;
   if (!token) return res.status(401).json({ message: "Не авторизован" });
@@ -57,6 +60,7 @@ function adminOnly(req, res, next) {
   next();
 }
 
+// Эндпоинты (оставляем без изменений, кроме /chat)
 app.get("/me", authenticate, (req, res) => {
   res.json({ user: req.user });
 });
@@ -512,6 +516,100 @@ app.delete("/orders/:id", authenticate, adminOnly, async (req, res) => {
   } catch (err) {
     console.error("Ошибка при удалении заказа:", err);
     res.status(500).json({ message: "Ошибка при удалении заказа" });
+  }
+});
+
+// Обновленные эндпоинты чата
+app.get("/chat", authenticate, async (req, res) => {
+  try {
+    const messages = await Chat.find({ userId: req.user.id }).sort({
+      timestamp: 1,
+    });
+    res.json(messages);
+  } catch (err) {
+    console.error("Ошибка при получении сообщений:", err);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
+app.post("/chat", authenticate, async (req, res) => {
+  const { message } = req.body;
+  if (!message || !message.trim()) {
+    return res.status(400).json({ message: "Сообщение не может быть пустым" });
+  }
+  try {
+    // Сохраняем сообщение пользователя
+    const userMessage = new Chat({
+      userId: req.user.id,
+      message: message.trim(),
+      sender: "user",
+    });
+    await userMessage.save();
+
+    // Запрос к OpenRouter API
+    const intelResponse = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions ",
+      {
+        model: "nousresearch/deephermes-3-mistral-24b-preview:free",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Вы — полезный помощник службы поддержки интернет-магазина. Отвечайте на русском языке только коротким и прямым текстом без лишних размышлений. Вы не можете отвечать на вопросы не связанные с интернет магазином вещей. Ответы должны Быть ясными и лаконичными, избегать излишних подробностей.Вы должны Направлять пользователя к действию (например, оформить заказ, выбрать товар или воспользоваться фильтрами).Отвечать на вопросы о наличии товара, его характеристиках, ценах, способах доставки и оплате.  Быстро решать проблемы с заказами, возвратами и обменами ",
+          },
+          { role: "user", content: message.trim() },
+        ],
+        max_tokens: 150,
+      },
+      {
+        headers: {
+          Authorization: `Bearer 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`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "http://localhost:5173",
+          "X-Title": "Shop Assistant",
+        },
+      }
+    );
+
+    // Извлекаем ответ ИИ
+    const aiResponse =
+      intelResponse.data?.choices?.[0]?.message?.content?.trim() || "";
+    if (!aiResponse) {
+      return res.status(500).json({ message: "Пустой ответ от ИИ" });
+    }
+
+    // Сохраняем ответ ИИ
+    const aiMessage = new Chat({
+      userId: req.user.id,
+      message: aiResponse,
+      sender: "ai",
+    });
+    await aiMessage.save();
+
+    // Возвращаем историю чата
+    const messages = await Chat.find({ userId: req.user.id }).sort({
+      timestamp: 1,
+    });
+    res.json(messages);
+  } catch (err) {
+    console.error(
+      "Ошибка при отправке сообщения:",
+      err.response?.data || err.message
+    );
+    res.status(500).json({
+      message: "Ошибка сервера при обработке сообщения",
+      error: err.response?.data || err.message,
+    });
+  }
+});
+
+app.delete("/chat", authenticate, async (req, res) => {
+  try {
+    await Chat.deleteMany({ userId: req.user.id });
+    res.json({ message: "Чат очищен" });
+  } catch (err) {
+    console.error("Ошибка при очистке чата:", err);
+    res.status(500).json({ message: "Ошибка сервера" });
   }
 });
 
