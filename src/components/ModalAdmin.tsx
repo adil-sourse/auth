@@ -1,3 +1,6 @@
+import React from "react";
+import StockSlider from "./ui/slider";
+
 interface EditProductModalProps {
   product: {
     _id: string;
@@ -6,6 +9,7 @@ interface EditProductModalProps {
     description: string;
     price: string;
     category: string;
+    stock: number;
   };
   onChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -41,7 +45,7 @@ export default function EditProductModal({
               placeholder="Введите название"
               value={product.name}
               onChange={onChange}
-              className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+              className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
             />
           </div>
           <div>
@@ -57,7 +61,7 @@ export default function EditProductModal({
               placeholder="Введите описание"
               value={product.description}
               onChange={onChange}
-              className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+              className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
             />
           </div>
           <div>
@@ -75,8 +79,19 @@ export default function EditProductModal({
               onChange={onChange}
               type="number"
               step="0.01"
-              className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+              className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
             />
+          </div>
+          <div>
+            <label
+              htmlFor="stock"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Наличие (шт.)
+            </label>
+            <div className="flex items-center space-x-4 mt-1">
+              <StockSlider stock={String(product.stock)} onChange={onChange} />
+            </div>
           </div>
           <div>
             <label
@@ -91,7 +106,7 @@ export default function EditProductModal({
               placeholder="Введите URL изображения"
               value={product.image}
               onChange={onChange}
-              className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+              className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
             />
           </div>
           <div>
@@ -106,7 +121,7 @@ export default function EditProductModal({
               id="category"
               value={product.category}
               onChange={onChange}
-              className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none "
+              className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
             >
               <option value="">Выберите категорию</option>
               <option value="electronics">Электроника</option>
@@ -125,7 +140,7 @@ export default function EditProductModal({
           </button>
           <button
             onClick={onSave}
-            className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium"
+            className="px-4 py-2 rounded-lg text-white bg-black hover:bg-gray-800 transition-colors text-sm font-medium"
           >
             Сохранить
           </button>

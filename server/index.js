@@ -18,6 +18,52 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const app = express();
 const PORT = 5000;
 
+// Кэш для продуктов
+let productCache = null;
+let cacheTimestamp = null;
+
+// Функция для получения контекста продуктов
+async function getProductContext(message) {
+  const now = Date.now();
+  let products;
+
+  // Простая фильтрация по ключевым словам в сообщении
+  if (message.toLowerCase().includes("футболки")) {
+    products = await Product.find({ category: "Футболки" }).select(
+      "name price description category stock"
+    );
+  } else if (message.toLowerCase().includes("электроника")) {
+    products = await Product.find({ category: "Электроника" }).select(
+      "name price description category stock"
+    );
+  } else {
+    // Ограничиваем до 50 продуктов для общего запроса
+    products = await Product.find()
+      .limit(50)
+      .select("name price description category stock");
+  }
+
+  // Обновляем кэш каждые 5 минут
+  if (
+    !productCache ||
+    !cacheTimestamp ||
+    now - cacheTimestamp > 5 * 60 * 1000
+  ) {
+    productCache = products
+      .map(
+        (p) =>
+          `Название: ${p.name}, Цена: ${p.price} ₸, Категория: ${
+            p.category
+          }, Наличие: ${p.stock} шт., Описание: ${
+            p.description || "Нет описания"
+          }`
+      )
+      .join("\n");
+    cacheTimestamp = now;
+  }
+  return productCache;
+}
+
 mongoose.connect("mongodb://localhost:27017/shop", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -60,7 +106,7 @@ function adminOnly(req, res, next) {
   next();
 }
 
-// Эндпоинты (оставляем без изменений, кроме /chat)
+// Эндпоинты
 app.get("/me", authenticate, (req, res) => {
   res.json({ user: req.user });
 });
@@ -161,7 +207,9 @@ app.post("/logout", (req, res) => {
 
 app.get("/products", async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find().select(
+      "name price description category stock image"
+    );
     res.status(200).json(products);
   } catch (err) {
     console.error("Ошибка при получении продуктов:", err);
@@ -170,10 +218,17 @@ app.get("/products", async (req, res) => {
 });
 
 app.post("/products", authenticate, adminOnly, async (req, res) => {
-  const { name, price, description, category, image } = req.body;
+  const { name, price, description, category, image, stock } = req.body;
 
-  if (!name || !price) {
-    return res.status(400).json({ message: "Название и цена обязательны" });
+  if (!name || !price || stock === undefined) {
+    return res
+      .status(400)
+      .json({ message: "Название, цена и наличие обязательны" });
+  }
+
+  const stockNum = parseInt(stock);
+  if (isNaN(stockNum) || stockNum < 0 || stockNum > 100) {
+    return res.status(400).json({ message: "Наличие должно быть от 0 до 100" });
   }
 
   try {
@@ -183,10 +238,11 @@ app.post("/products", authenticate, adminOnly, async (req, res) => {
       description,
       category,
       image,
-      stock: 0,
+      stock: stockNum,
     });
 
     await newProduct.save();
+    productCache = null; // Сброс кэша
     const all = await Product.find();
     res.status(201).json(all);
   } catch (err) {
@@ -197,7 +253,15 @@ app.post("/products", authenticate, adminOnly, async (req, res) => {
 
 app.put("/products/:id", authenticate, adminOnly, async (req, res) => {
   const { id } = req.params;
-  const { name, price, description, category, image } = req.body;
+  const { name, price, description, category, image, stock } = req.body;
+
+  const stockNum = stock !== undefined ? parseInt(stock) : undefined;
+  if (
+    stockNum !== undefined &&
+    (isNaN(stockNum) || stockNum < 0 || stockNum > 100)
+  ) {
+    return res.status(400).json({ message: "Наличие должно быть от 0 до 100" });
+  }
 
   try {
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -208,6 +272,7 @@ app.put("/products/:id", authenticate, adminOnly, async (req, res) => {
         description,
         category,
         image,
+        stock: stockNum,
       },
       { new: true }
     );
@@ -216,6 +281,7 @@ app.put("/products/:id", authenticate, adminOnly, async (req, res) => {
       return res.status(404).json({ message: "Продукт не найден" });
     }
 
+    productCache = null; // Сброс кэша
     const all = await Product.find();
     res.json(all);
   } catch (err) {
@@ -238,6 +304,7 @@ app.delete("/products/:id", authenticate, adminOnly, async (req, res) => {
       }
     );
 
+    productCache = null; // Сброс кэша
     const all = await Product.find();
     res.json(all);
   } catch (err) {
@@ -344,6 +411,10 @@ app.post("/basket", authenticate, async (req, res) => {
         .status(404)
         .json({ message: "Пользователь или продукт не найден" });
 
+    if (product.stock < quantity) {
+      return res.status(400).json({ message: "Недостаточно товара в наличии" });
+    }
+
     const index = user.basket.findIndex(
       (item) => item.productId.toString() === productId
     );
@@ -375,6 +446,16 @@ app.put("/basket/:productId", authenticate, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.id);
+    const product = await Product.findById(productId);
+    if (!user || !product)
+      return res
+        .status(404)
+        .json({ message: "Пользователь или продукт не найден" });
+
+    if (product.stock < quantity) {
+      return res.status(400).json({ message: "Недостаточно товара в наличии" });
+    }
+
     const index = user.basket.findIndex(
       (item) => item.productId.toString() === productId
     );
@@ -442,6 +523,19 @@ app.post("/checkout", authenticate, async (req, res) => {
       return res.status(400).json({ message: "Все поля обязательны" });
     }
 
+    // Проверка наличия товаров
+    for (const item of basket) {
+      const product = await Product.findById(item.productId._id);
+      if (!product) {
+        throw new Error("Продукт не найден");
+      }
+      if (product.stock < item.quantity) {
+        return res.status(400).json({
+          message: `Недостаточно товара "${product.name}" в наличии`,
+        });
+      }
+    }
+
     const items = await Promise.all(
       basket.map(async (item) => {
         const product = await Product.findById(item.productId._id);
@@ -477,10 +571,18 @@ app.post("/checkout", authenticate, async (req, res) => {
       paymentMethod,
     });
 
+    // Уменьшение количества товаров в наличии
+    for (const item of items) {
+      await Product.findByIdAndUpdate(item.productId, {
+        $inc: { stock: -item.quantity },
+      });
+    }
+
     await order.save();
 
     await User.findByIdAndUpdate(req.user.id, { $set: { basket: [] } });
 
+    productCache = null; // Сброс кэша
     res
       .status(201)
       .json({ message: "Заказ успешно создан", orderId: order._id });
@@ -519,7 +621,7 @@ app.delete("/orders/:id", authenticate, adminOnly, async (req, res) => {
   }
 });
 
-// Обновленные эндпоинты чата
+// Эндпоинты чата
 app.get("/chat", authenticate, async (req, res) => {
   try {
     const messages = await Chat.find({ userId: req.user.id }).sort({
@@ -537,6 +639,7 @@ app.post("/chat", authenticate, async (req, res) => {
   if (!message || !message.trim()) {
     return res.status(400).json({ message: "Сообщение не может быть пустым" });
   }
+
   try {
     // Сохраняем сообщение пользователя
     const userMessage = new Chat({
@@ -546,16 +649,18 @@ app.post("/chat", authenticate, async (req, res) => {
     });
     await userMessage.save();
 
+    // Получаем контекст продуктов
+    const productContext = await getProductContext(message);
+
     // Запрос к OpenRouter API
     const intelResponse = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions ",
+      "https://openrouter.ai/api/v1/chat/completions",
       {
-        model: "nousresearch/deephermes-3-mistral-24b-preview:free",
+        model: "mistralai/mistral-medium-3",
         messages: [
           {
             role: "system",
-            content:
-              "Вы — полезный помощник службы поддержки интернет-магазина. Отвечайте на русском языке только коротким и прямым текстом без лишних размышлений. Вы не можете отвечать на вопросы не связанные с интернет магазином вещей. Ответы должны Быть ясными и лаконичными, избегать излишних подробностей.Вы должны Направлять пользователя к действию (например, оформить заказ, выбрать товар или воспользоваться фильтрами).Отвечать на вопросы о наличии товара, его характеристиках, ценах, способах доставки и оплате.  Быстро решать проблемы с заказами, возвратами и обменами ",
+            content: `Вы — помощник службы поддержки интернет-магазина. Отвечайте на русском языке коротко и прямым текстом. Используйте данные о товарах для ответа на вопросы о наличии, характеристиках, ценах и категориях. Направляйте пользователя к действию (например, оформить заказ или выбрать товар). Отвечайте только на вопросы, связанные с магазином. Данные о товарах:\n${productContext} Цены там не в рублях а в тенге (обозначение ₸)`,
           },
           { role: "user", content: message.trim() },
         ],
@@ -563,7 +668,7 @@ app.post("/chat", authenticate, async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer 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`,
+          Authorization: `Bearer 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`,
           "Content-Type": "application/json",
           "HTTP-Referer": "http://localhost:5173",
           "X-Title": "Shop Assistant",

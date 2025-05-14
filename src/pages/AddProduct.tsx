@@ -6,14 +6,6 @@ import ProductCardAdmin from "../components/CardAdmin";
 import EditProductModal from "../components/ModalAdmin";
 import { IoIosArrowBack } from "react-icons/io";
 
-interface ProductInput {
-  name: string;
-  description: string;
-  category: string;
-  price: string;
-  image: string;
-}
-
 interface Product {
   _id: string;
   name: string;
@@ -21,15 +13,17 @@ interface Product {
   description: string;
   price: string;
   category: string;
+  stock: number; // Добавлено stock
 }
 
 export default function AddProduct() {
-  const [newProduct, setNewProduct] = useState<ProductInput>({
+  const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
     category: "",
     price: "",
     image: "",
+    stock: "1", // Инициализация stock
   });
   const [selectedCategory, setSelectedCategory] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
@@ -39,8 +33,11 @@ export default function AddProduct() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:5000/products")
-      .then((res) => res.json())
+    fetch("http://localhost:5000/products", { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Ошибка загрузки продуктов");
+        return res.json();
+      })
       .then(setProducts)
       .catch((err) => {
         console.error("Ошибка загрузки продуктов:", err);
@@ -48,8 +45,15 @@ export default function AddProduct() {
       });
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    if (name === "stock") {
+      const num = parseInt(value);
+      if (value === "" || isNaN(num) || num < 1 || num > 100) return;
+    }
+    setNewProduct({ ...newProduct, [name]: value });
     setError("");
   };
 
@@ -60,14 +64,19 @@ export default function AddProduct() {
   };
 
   const handleAdd = async () => {
-    if (!newProduct.name || !newProduct.price) {
-      setError("Название и цена обязательны");
+    if (!newProduct.name || !newProduct.price || !newProduct.stock) {
+      setError("Название, цена и наличие обязательны");
       return;
     }
 
     const priceNum = parseFloat(newProduct.price);
+    const stockNum = parseInt(newProduct.stock);
     if (isNaN(priceNum) || priceNum < 0) {
       setError("Цена должна быть положительным числом");
+      return;
+    }
+    if (isNaN(stockNum) || stockNum < 0 || stockNum > 100) {
+      setError("Наличие должно быть от 0 до 100");
       return;
     }
 
@@ -79,6 +88,7 @@ export default function AddProduct() {
         body: JSON.stringify({
           ...newProduct,
           price: priceNum,
+          stock: stockNum,
         }),
       });
 
@@ -99,6 +109,7 @@ export default function AddProduct() {
         price: "",
         image: "",
         category: "",
+        stock: "1",
       });
       setSelectedCategory("");
       setError("");
@@ -142,15 +153,24 @@ export default function AddProduct() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     if (!editProduct) return;
-    setEditProduct({ ...editProduct, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setEditProduct({
+      ...editProduct,
+      [name]: name === "stock" ? parseInt(value) : value,
+    });
   };
 
   const handleUpdate = async () => {
     if (!editProduct) return;
 
     const priceNum = parseFloat(editProduct.price);
+    const stockNum = parseInt(editProduct.stock.toString());
     if (isNaN(priceNum) || priceNum < 0) {
       setError("Цена должна быть положительным числом");
+      return;
+    }
+    if (isNaN(stockNum) || stockNum < 0 || stockNum > 100) {
+      setError("Наличие должно быть от 0 до 100");
       return;
     }
 
@@ -164,6 +184,7 @@ export default function AddProduct() {
           body: JSON.stringify({
             ...editProduct,
             price: priceNum,
+            stock: stockNum,
           }),
         }
       );

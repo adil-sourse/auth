@@ -14,11 +14,12 @@ interface ChatProps {
   userId: string;
 }
 
-export default function Chat({ isOpen, onClose, userId }: ChatProps) {
+export default function Chat({ isOpen, onClose }: ChatProps) {
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatError, setChatError] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -84,7 +85,11 @@ export default function Chat({ isOpen, onClose, userId }: ChatProps) {
     }
   };
 
-  const handleClearChat = async () => {
+  const handleClearChatInitiate = () => {
+    setShowClearModal(true);
+  };
+
+  const handleClearChatConfirm = async () => {
     try {
       await axios.delete("http://localhost:5000/chat", {
         withCredentials: true,
@@ -93,7 +98,13 @@ export default function Chat({ isOpen, onClose, userId }: ChatProps) {
       setChatError("");
     } catch (err: any) {
       setChatError(err.response?.data?.message || "Ошибка при очистке чата");
+    } finally {
+      setShowClearModal(false);
     }
+  };
+
+  const handleClearChatCancel = () => {
+    setShowClearModal(false);
   };
 
   if (!isOpen) return null;
@@ -104,7 +115,7 @@ export default function Chat({ isOpen, onClose, userId }: ChatProps) {
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-black">Поддержка</h2>
           <div className="flex gap-6">
-            <button onClick={handleClearChat} disabled={isSending}>
+            <button onClick={handleClearChatInitiate} disabled={isSending}>
               <FaRegTrashAlt />
             </button>
             <button
@@ -173,6 +184,33 @@ export default function Chat({ isOpen, onClose, userId }: ChatProps) {
           </div>
         </div>
       </div>
+
+      {showClearModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-lg max-w-sm w-full">
+            <h2 className="text-lg font-semibold text-black mb-4">
+              Подтверждение очистки чата
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Точно хотите очистить чат? Все сообщения будут удалены.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={handleClearChatCancel}
+                className="px-4 py-2 rounded-lg bg-gray-200 text-black hover:bg-gray-300 transition-colors text-sm"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleClearChatConfirm}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-sm"
+              >
+                Да
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

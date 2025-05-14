@@ -66,11 +66,11 @@ export default function Products() {
   };
 
   return (
-    <div>
+    <div className="bg-gray-50 h-full min-h-screen">
       <Header />
 
-      <div className="max-w-7xl mx-auto px-4">
-        <h1 className="font-bold text-3xl text-center mt-3 mb-10">Товары</h1>
+      <div className="max-w-7xl mx-auto px-4 ">
+        <h1 className="font-bold text-3xl text-center mt-10 mb-10">Товары</h1>
 
         <div className="flex gap-4 mx-10 md:mx-0 items-center">
           <div className="flex w-full sm:w-auto flex-1">
@@ -145,7 +145,7 @@ export default function Products() {
 
         <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 mt-10 place-items-center">
           {filteredProducts.map((product) => (
-            <ProductCard _id={""} key={product.id} {...product} />
+            <ProductCard stock={0} _id={""} key={product.id} {...product} />
           ))}
         </div>
       </div>

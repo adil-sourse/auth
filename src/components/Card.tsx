@@ -10,6 +10,7 @@ interface Product {
   description: string;
   price: string;
   category: string;
+  stock: number;
 }
 
 interface BasketItem {
@@ -27,6 +28,7 @@ export default function ProductCard({
   image,
   description,
   price,
+  stock,
 }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInBasket, setIsInBasket] = useState(false);
@@ -52,6 +54,10 @@ export default function ProductCard({
   }, [_id]);
 
   const handleAddToBasket = async () => {
+    if (stock === 0) {
+      toast.error("Товар отсутствует в наличии");
+      return;
+    }
     try {
       await axios.post(
         "http://localhost:5000/basket",
@@ -71,44 +77,71 @@ export default function ProductCard({
     }
   };
 
+  const isOutOfStock = stock === 0;
+
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-xs h-96 mx-auto hover:cursor-pointer hover:scale-105 duration-500 transition-all">
+      <div
+        className={`bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-xs h-[25rem] mx-auto ${
+          isOutOfStock ? "opacity-50" : "hover:cursor-pointer hover:scale-105"
+        } duration-500 transition-all`}
+      >
         <div
           className="w-64 h-64 rounded-2xl relative overflow-hidden mx-auto"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => !isOutOfStock && setIsModalOpen(true)}
         >
-          <img src={image} alt={name} className="w-full h-full object-cover" />
+          <img
+            src={image}
+            alt={name}
+            className={`w-full h-full object-cover ${
+              isOutOfStock ? "grayscale" : ""
+            }`}
+          />
         </div>
 
-        <div className="p-5">
+        <div className="p-4 flex flex-col h-[calc(100%-256px)]">
           <h2
-            className="text-xl font-semibold text-gray-800 mb-2 line-clamp-1"
-            onClick={() => setIsModalOpen(true)}
+            className="text-lg font-semibold text-gray-800 mb-1 line-clamp-2"
+            onClick={() => !isOutOfStock && setIsModalOpen(true)}
           >
             {name}
           </h2>
-          <div className="flex justify-between items-center">
-            <div onClick={() => setIsModalOpen(true)}>
-              <p className="text-sm text-gray-500 line-clamp-1 max-w-44">
+          <div className="flex justify-between items-end flex-1">
+            <div onClick={() => !isOutOfStock && setIsModalOpen(true)}>
+              <p className="text-xs text-gray-500 line-clamp-1 max-w-44">
                 {description}
               </p>
-              <p className="text-lg font-bold text-gray-800 line-clamp-1">
-                {price} ₸
+              <p className="text-xs font-medium text-gray-600 bg-gray-100 rounded-lg px-2 py-1 inline-block mt-3 mb-1">
+                В наличии: {stock} шт.
               </p>
+              {isOutOfStock ? (
+                <p className="text-base font-bold text-gray-500 mt-1">
+                  Товар отсутствует
+                </p>
+              ) : (
+                <p className="text-base font-bold text-gray-800 mt-1">
+                  {price} ₸
+                </p>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={handleAddToBasket}
-              disabled={isInBasket || loading}
-              className={`ml-6 py-2    ${
-                isInBasket
-                  ? "text-gray-600 cursor-not-allowed text-md"
-                  : "bg-black hover:bg-gray-800 text-white text-sm"
-              } rounded-lg transition duration-300 w-32 z-10`}
-            >
-              {loading ? "Загрузка..." : isInBasket ? "В корзине" : "В корзину"}
-            </button>
+            {!isOutOfStock && (
+              <button
+                type="button"
+                onClick={handleAddToBasket}
+                disabled={isInBasket || loading || isOutOfStock}
+                className={`ml-4 py-1.5 ${
+                  isInBasket
+                    ? "text-gray-600 cursor-not-allowed text-xs"
+                    : "bg-black hover:bg-gray-800 text-white text-xs"
+                } rounded-lg transition duration-300 w-24 z-10`}
+              >
+                {loading
+                  ? "Загрузка..."
+                  : isInBasket
+                  ? "В корзине"
+                  : "В корзину"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -137,8 +170,11 @@ export default function ProductCard({
                   <h2 className="text-3xl font-bold text-gray-900 mb-3">
                     {name}
                   </h2>
-                  <p className="text-gray-600 text-lg mb-4 leading-relaxed ">
+                  <p className="text-gray-600 text-lg mb-4 leading-relaxed">
                     {description}
+                  </p>
+                  <p className="text-sm font-medium text-gray-600 bg-gray-100 rounded-lg px-2 py-1 inline-block mb-4">
+                    В наличии: {stock} шт.
                   </p>
                   <div className="text-3xl font-bold text-black mb-6">
                     {price} ₸
@@ -147,8 +183,8 @@ export default function ProductCard({
                 <div className="flex space-x-4">
                   <button
                     onClick={handleAddToBasket}
-                    disabled={isInBasket || loading}
-                    className={`  px-6 py-3 rounded-xl font-semibold text-lg ${
+                    disabled={isInBasket || loading || isOutOfStock}
+                    className={`px-6 py-3 rounded-xl font-semibold text-lg ${
                       isInBasket
                         ? "text-gray-600 cursor-not-allowed"
                         : "hover:bg-gray-800 bg-black text-white"

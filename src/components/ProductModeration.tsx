@@ -1,4 +1,5 @@
 import React from "react";
+import StockSlider from "../components/ui/slider";
 
 interface Props {
   newProduct: {
@@ -7,10 +8,13 @@ interface Props {
     category: string;
     price: string;
     image: string;
+    stock: string;
   };
   selectedCategory: string;
   error: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => void;
   onCategoryChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onAdd: () => void;
 }
@@ -88,6 +92,15 @@ export default function ProductModeration({
             step="0.01"
             className="mt-1 block w-full py-1 px-2 border border-gray-300 rounded-lg sm:text-sm focus:outline-none"
           />
+        </div>
+        <div>
+          <label
+            htmlFor="stock"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Наличие (шт.)
+          </label>
+          <StockSlider stock={newProduct.stock} onChange={onChange} />
         </div>
         <div>
           <label

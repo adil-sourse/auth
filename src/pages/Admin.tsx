@@ -11,6 +11,7 @@ interface Product {
   description: string;
   price: string;
   category: string;
+  stock: number;
 }
 
 export default function Admin() {
@@ -64,15 +65,24 @@ export default function Admin() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     if (!editProduct) return;
-    setEditProduct({ ...editProduct, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setEditProduct({
+      ...editProduct,
+      [name]: name === "stock" ? parseInt(value) || 1 : value,
+    });
   };
 
   const handleUpdate = async () => {
     if (!editProduct) return;
 
     const priceNum = parseFloat(editProduct.price);
+    const stockNum = parseInt(editProduct.stock.toString());
     if (isNaN(priceNum) || priceNum < 0) {
       setError("Цена должна быть положительным числом");
+      return;
+    }
+    if (isNaN(stockNum) || stockNum < 1 || stockNum > 100) {
+      setError("Наличие должно быть от 1 до 100");
       return;
     }
 
@@ -86,6 +96,7 @@ export default function Admin() {
           body: JSON.stringify({
             ...editProduct,
             price: priceNum,
+            stock: stockNum,
           }),
         }
       );

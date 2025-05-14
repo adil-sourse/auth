@@ -14,7 +14,7 @@ interface Order {
     productId: {
       name: string;
       price: number;
-    };
+    } | null; // Обновлено: productId может быть null
     quantity: number;
     price: number;
   }[];
@@ -169,7 +169,9 @@ export default function OrderHistory() {
                       className="flex justify-between text-sm text-gray-600 mb-1"
                     >
                       <span>
-                        {item.productId.name} x {item.quantity}
+                        {item.productId
+                          ? `${item.productId.name} x ${item.quantity}`
+                          : `Товар удалён x ${item.quantity}`}
                       </span>
                       <span>
                         {(item.price * item.quantity).toLocaleString()} ₸

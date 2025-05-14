@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 interface BasketItem {
   productId: {
@@ -11,6 +12,7 @@ interface BasketItem {
     price: number;
     description: string;
     category: string;
+    stock: number;
   };
   quantity: number;
 }
@@ -60,6 +62,13 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Проверка наличия товаров на клиенте
+    for (const item of basket) {
+      if (item.productId.stock < item.quantity) {
+        toast.error(`Недостаточно товара "${item.productId.name}" в наличии`);
+        return;
+      }
+    }
     setShowConfirmModal(true);
   };
 
@@ -71,10 +80,14 @@ export default function Checkout() {
         { withCredentials: true }
       );
       setShowConfirmModal(false);
+      toast.success("Заказ успешно оформлен!");
       navigate("/basket");
     } catch (err: any) {
       setError(err.response?.data?.message || "Ошибка при оформлении заказа");
       setShowConfirmModal(false);
+      toast.error(
+        err.response?.data?.message || "Ошибка при оформлении заказа"
+      );
     }
   };
 
@@ -93,7 +106,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <Header />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">
@@ -128,7 +141,7 @@ export default function Checkout() {
                     onChange={handleInputChange}
                     required
                     placeholder="Введите имя"
-                    className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+                    className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
                   />
                 </div>
                 <div>
@@ -146,7 +159,7 @@ export default function Checkout() {
                     onChange={handleInputChange}
                     required
                     placeholder="Введите фамилию"
-                    className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+                    className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
                   />
                 </div>
               </div>
@@ -165,7 +178,7 @@ export default function Checkout() {
                   onChange={handleInputChange}
                   required
                   placeholder="Введите email"
-                  className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+                  className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
                 />
               </div>
               <div>
@@ -183,7 +196,7 @@ export default function Checkout() {
                   onChange={handleInputChange}
                   required
                   placeholder="Введите номер"
-                  className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+                  className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
                 />
               </div>
               <div>
@@ -201,7 +214,7 @@ export default function Checkout() {
                   onChange={handleInputChange}
                   required
                   placeholder="Введите адрес"
-                  className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+                  className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -220,7 +233,7 @@ export default function Checkout() {
                     onChange={handleInputChange}
                     required
                     placeholder="Введите город"
-                    className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+                    className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
                   />
                 </div>
                 <div>
@@ -238,7 +251,7 @@ export default function Checkout() {
                     onChange={handleInputChange}
                     required
                     placeholder="Введите индекс"
-                    className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+                    className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
                   />
                 </div>
               </div>
@@ -254,7 +267,7 @@ export default function Checkout() {
                   name="paymentMethod"
                   value={formData.paymentMethod}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg  border 0 sm:text-sm focus:outline-none"
+                  className="mt-1 block w-full py-1 px-2 border-gray-300 rounded-lg border sm:text-sm focus:outline-none"
                 >
                   <option value="card">Кредитная карта</option>
                   <option value="cash">Наличные при доставке</option>
@@ -264,7 +277,6 @@ export default function Checkout() {
               <button
                 type="submit"
                 className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors text-md font-medium"
-                onClick={handleSubmit}
               >
                 Подтвердить заказ
               </button>
