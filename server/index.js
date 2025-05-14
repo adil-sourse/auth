@@ -668,7 +668,7 @@ app.post("/chat", authenticate, async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer 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`,
+          Authorization: `Bearer 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`,
           "Content-Type": "application/json",
           "HTTP-Referer": "http://localhost:5173",
           "X-Title": "Shop Assistant",

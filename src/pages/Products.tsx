@@ -88,7 +88,7 @@ export default function Products() {
             />
             <button
               onClick={() => setSearchProd(searchProdInput)}
-              className="bg-black text-white px-6 py-3 hover:bg-gray-800 transition-colors text-sm font-medium"
+              className="bg-black text-white px-6 py-3 hover:bg-gray-800 transition-colors text-sm font-medium "
             >
               Поиск
             </button>
